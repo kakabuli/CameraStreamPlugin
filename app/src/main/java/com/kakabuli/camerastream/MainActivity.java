@@ -1,308 +1,772 @@
 package com.kakabuli.camerastream;
 
-import android.graphics.SurfaceTexture;
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
-import android.view.Surface;
 import android.view.View;
-import android.widget.ImageButton;
+import android.widget.Button;
 import android.widget.Toast;
 
-import com.serenegiant.common.BaseActivity;
+import com.github.faucamp.simplertmp.RtmpHandler;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.serenegiant.UVCCameraView;
+import com.serenegiant.UVCPublisher;
+import com.serenegiant.dialog.MessageDialogFragment;
 import com.serenegiant.usb.CameraDialog;
 import com.serenegiant.usb.USBMonitor;
-import com.serenegiant.usb.USBMonitor.OnDeviceConnectListener;
-import com.serenegiant.usb.USBMonitor.UsbControlBlock;
 import com.serenegiant.usb.UVCCamera;
-import com.serenegiant.usbcameracommon.UVCCameraHandler;
-import com.serenegiant.usbcameracommon.UvcCameraDataCallBack;
-import com.serenegiant.widget.CameraViewInterface;
-import com.serenegiant.widget.UVCCameraTextureView;
+import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.utils.PermissionCheck;
+import com.kakabuli.camerastream.http.NewServiceImp;
+import com.kakabuli.camerastream.http.result.LoginResult;
+import com.kakabuli.camerastream.socket.IRTMPListener;
+import com.kakabuli.camerastream.socket.MySocket;
+import com.kakabuli.camerastream.socket.SocketConstants;
+import com.kakabuli.camerastream.socket.result.BaseResult;
+import com.kakabuli.camerastream.utils.Constants;
+import com.kakabuli.camerastream.utils.MMKVUtils;
 
+import net.ossrs.yasea.SrsEncodeHandler;
+import net.ossrs.yasea.SrsRecordHandler;
 
-public class MainActivity extends BaseActivity implements CameraDialog.CameraDialogParent {
-    private static final boolean DEBUG = true;
-    private static final String TAG = "MainActivity";
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
-    private static final float[] BANDWIDTH_FACTORS = {0.5f, 0.5f};
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
 
-    // for accessing USB and USB camera
-    private USBMonitor mUSBMonitor;
+public class MainActivity extends Activity implements MessageDialogFragment.MessageDialogListener, CameraDialog.CameraDialogParent {
+    private UVCCameraView uvcCameraView;
+    private UVCCameraView uvcCameraView1;
+    private Button btn_start;
 
-    private UVCCameraHandler mHandlerFirst;
-    private CameraViewInterface mUVCCameraViewFirst;
-    private ImageButton mCaptureButtonFirst;
-    private Surface mFirstPreviewSurface;
+    private USBMonitor usbMonitor;
+    private UVCCamera uvcCameraFirst;
+    private UVCCamera uvcCameraSecond;
+    private UVCPublisher uvcPublisher;
+    private UVCPublisher uvcPublisher1;
+    private static String RTMP_URL_01 = "rtmp://118.190.36.40/devices/13723789649";
+//    private static String RTMP_URL_01 = "rtmp://192.168.1.100:1935/myapp/camera01";
+    private static String RTMP_URL_02 = "rtmp://192.168.1.100:1935/myapp/camera02";
 
-    private UVCCameraHandler mHandlerSecond;
-    private CameraViewInterface mUVCCameraViewSecond;
-    private ImageButton mCaptureButtonSecond;
-    private Surface mSecondPreviewSurface;
+    private String token = "";
+
+    private MySocket mMySocket;
+
+    private List<UsbDevice> mAttachDevice;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_surface_view_camera);
-        findViewById(R.id.RelativeLayout1).setOnClickListener(mOnClickListener);
-        mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
-        resultFirstCamera();
-        resultSecondCamera();
+        setContentView(R.layout.activity_main);
+        initView();
+        initData();
     }
 
-    /**
-     * 带有回调数据的初始化
-     */
-    private void resultFirstCamera() {
-        mUVCCameraViewFirst = (CameraViewInterface) findViewById(R.id.camera_view_first);
-        //设置显示宽高
-        mUVCCameraViewFirst.setAspectRatio(UVCCamera.DEFAULT_PREVIEW_WIDTH / (float) UVCCamera.DEFAULT_PREVIEW_HEIGHT);
-        ((UVCCameraTextureView) mUVCCameraViewFirst).setOnClickListener(mOnClickListener);
-        mCaptureButtonFirst = (ImageButton) findViewById(R.id.capture_button_first);
-        mCaptureButtonFirst.setOnClickListener(mOnClickListener);
-        mCaptureButtonFirst.setVisibility(View.INVISIBLE);
-        mHandlerFirst = UVCCameraHandler.createHandler(this, mUVCCameraViewFirst
-                , UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT
-                , BANDWIDTH_FACTORS[0], firstDataCallBack);
+    private void getUserToken() {
+        NewServiceImp.login(/*"13723789649","123456"*/"admin","admin").subscribe(new Observer<LoginResult>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+                Log.d("shulan_http","onSubscribe");
+            }
+
+            @Override
+            public void onNext(@NonNull LoginResult loginResult) {
+                Log.d("shulan_http","onNext-->" + loginResult.toString());
+
+                if(loginResult.getMeta().getCode() == 200 && loginResult.getMeta().isSuccess()) {
+                    if(!TextUtils.isEmpty(loginResult.getData().getToken())){
+                        token =  loginResult.getData().getToken();
+                        MMKVUtils.setMMKV(Constants.DEVICE_TOKEN,loginResult.getData().getToken());
+                    }
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                Log.d("shulan_http","onError");
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d("shulan_http","onComplete");
+                if(!TextUtils.isEmpty(token))
+                    initSocket(token);
+            }
+        });
     }
 
-    UvcCameraDataCallBack firstDataCallBack = new UvcCameraDataCallBack() {
+    private void initSocket(String deviceToken) {
+        Log.d("liuhai_MySocket","initSocket------------");
+        mMySocket = new MySocket(URI.create(SocketConstants.SOCKET_URL + SocketConstants.LOGIN + deviceToken), new IRTMPListener() {
+            @Override
+            public void onSocketConnect(int code, String message) {
+
+            }
+
+            @Override
+            public void onSocketMessage(String message) {
+                BaseResult mBaseResult = new Gson().fromJson(message,
+                        new TypeToken<BaseResult>() {}.getType());
+                switch (mBaseResult.getType()){
+                    case Constants.TASK_LOGIN:
+                        break;
+                    case Constants.TASK_CHECK_CALLBACK:
+                       /* try{
+                            VideoPlayResult mVideoPlayResult = new Gson().fromJson(message, new TypeToken<VideoPlayResult>() {}.getType());
+                            Log.e("shulan111","mVideoPlayResult--->" + mVideoPlayResult.toString());
+                            Log.e("shulan111","mVideoPlayResult.getData().getRtmpUrl()--->" + mVideoPlayResult.getData().getRtmpUrl());
+                            RTMP_URL_01 = mVideoPlayResult.getData().getRtmpUrl();
+                        }catch (Exception e){
+
+                        }*/
+                        requestUSBMonitor();
+                        break;
+                    case Constants.VIDEO_PLAY_STOP:
+                        if(uvcPublisher != null){
+                            uvcPublisher.stopCamera();
+                        }
+                        if(uvcPublisher1 != null){
+                            uvcPublisher1.stopCamera();
+                        }
+                        break;
+                }
+            }
+
+            @Override
+            public void onSocketClose(int code, String reason, boolean remote) {
+
+            }
+
+            @Override
+            public void onSocketError(Exception e) {
+
+            }
+        });
+        mMySocket.connect();
+    }
+
+    private void initView() {
+        uvcCameraView = (UVCCameraView) findViewById(R.id.uvcCameraView);
+        uvcCameraView1 = (UVCCameraView) findViewById(R.id.uvcCameraView1);
+        btn_start = (Button) findViewById(R.id.btn_start);
+    }
+
+    private void initData() {
+        btn_start.setOnClickListener(clickListener);
+
+        mAttachDevice = new ArrayList<>();
+        usbMonitor = new USBMonitor(this, deviceConnectListener);
+
+        uvcPublisher1 = new UVCPublisher(uvcCameraView1);
+        uvcPublisher1.setEncodeHandler(new SrsEncodeHandler(srsEncodeListener1));
+        uvcPublisher1.setRtmpHandler(new RtmpHandler(rtmpListener1),8);
+        uvcPublisher1.setRecordHandler(new SrsRecordHandler(srsRecordListener1));
+        uvcPublisher1.setPreviewResolution(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT);
+        uvcPublisher1.setScreenOrientation(Configuration.ORIENTATION_LANDSCAPE);
+        uvcPublisher1.setOutputResolution(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT);
+        uvcPublisher1.setVideoHDMode();
+
+        uvcPublisher = new UVCPublisher(uvcCameraView);
+        uvcPublisher.setEncodeHandler(new SrsEncodeHandler(srsEncodeListener));
+        uvcPublisher.setRtmpHandler(new RtmpHandler(rtmpListener),9);
+        uvcPublisher.setRecordHandler(new SrsRecordHandler(srsRecordListener));
+        uvcPublisher.setPreviewResolution(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT);
+        uvcPublisher.setScreenOrientation(Configuration.ORIENTATION_LANDSCAPE);
+        uvcPublisher.setOutputResolution(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT);
+        uvcPublisher.setVideoHDMode();
+    }
+
+    private void requestUSBMonitor(){
+        Log.d("shulan111","+++requestUSBMonitor");
+         if(usbMonitor.isRegistered()){
+             if(mAttachDevice != null && mAttachDevice.size() > 0)
+             for (UsbDevice device : mAttachDevice) {
+                 Log.d("shulan111",usbMonitor.isRegistered() + " ");
+                 String name = device.getConfiguration(0).getName();
+                 if(!TextUtils.isEmpty(name) && !"null".equals(name))
+                     usbMonitor.requestPermission(device);
+             }
+            }
+    }
+
+    private View.OnClickListener clickListener = new View.OnClickListener() {
         @Override
-        public void getData(byte[] data) {
-            if (DEBUG) Log.v(TAG, "数据回调:" + data.length);
+        public void onClick(View v) {
+            if (v == btn_start) {
+                if (uvcCameraFirst == null && uvcCameraSecond == null) {
+//                    CameraDialog.showDialog(MainActivity.this);
+                } else {
+                    uvcPublisher.stopCamera();
+                }
+            }
+        }
+    };
+    private boolean isFirst = false;
+    private USBMonitor.OnDeviceConnectListener deviceConnectListener = new USBMonitor.OnDeviceConnectListener() {
+        @Override
+        public void onAttach(UsbDevice device) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(com.kakabuli.camerastream.MainActivity.this, "onAttach已关联", Toast.LENGTH_LONG).show();
+                }
+            });
+            if(usbMonitor.isRegistered()){
+                String name = device.getConfiguration(0).getName();
+                if(!TextUtils.isEmpty(name) && !"null".equals(name))
+                    mAttachDevice.add(device);
+            }
+
+
+            Log.d("shulan111","mAttachDevice.size()-->" + mAttachDevice.size());
+            Log.d("shulan111","mAttachDevice.tostring-->" + mAttachDevice.toString());
+        }
+
+        @Override
+        public void onDettach(UsbDevice device) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(com.kakabuli.camerastream.MainActivity.this, "onDettach失去关联", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @Override
+        public void onConnect(UsbDevice device, USBMonitor.UsbControlBlock ctrlBlock, boolean createNew) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(com.kakabuli.camerastream.MainActivity.this, "onConnect已连接", Toast.LENGTH_LONG).show();
+                }
+            });
+
+            if(!uvcPublisher.isOpened() && !isFirst){
+                uvcPublisher.stopCamera();
+                Log.d("shulan111", " 111111111111111111");
+                uvcCameraFirst = uvcPublisher.startCamera(ctrlBlock);
+                if (uvcCameraFirst == null) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(com.kakabuli.camerastream.MainActivity.this, "摄像头打开失败", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                    return;
+                }
+                uvcPublisher.startPublish(RTMP_URL_01);
+                isFirst = true;
+            }else if(!uvcPublisher1.isOpened()){
+                uvcPublisher1.stopCamera();
+                uvcCameraSecond = uvcPublisher1.startCamera(ctrlBlock);
+                if(uvcCameraSecond == null){
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(com.kakabuli.camerastream.MainActivity.this, "摄像头打开失败", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                    return;
+                }
+                uvcPublisher1.startPublish(RTMP_URL_02);
+            }
+
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(com.kakabuli.camerastream.MainActivity.this, "摄像头打开成功，开始推流", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @Override
+        public void onDisconnect(UsbDevice device, USBMonitor.UsbControlBlock ctrlBlock) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(com.kakabuli.camerastream.MainActivity.this, "onDisconnect断开连接", Toast.LENGTH_LONG).show();
+                }
+            });
+            if((uvcPublisher != null) && uvcPublisher.isEqual(device)){
+
+                uvcPublisher.stopCamera();
+            }
+
+            if((uvcPublisher1 != null) && uvcPublisher1.isEqual(device)){
+
+                uvcPublisher1.stopCamera();
+            }
+        }
+
+        @Override
+        public void onCancel(UsbDevice device) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(com.kakabuli.camerastream.MainActivity.this, "onCancel已取消", Toast.LENGTH_LONG).show();
+                }
+            });
         }
     };
 
-    private void resultSecondCamera() {
-        mUVCCameraViewSecond = (CameraViewInterface) findViewById(R.id.camera_view_second);
-        mUVCCameraViewSecond.setAspectRatio(UVCCamera.DEFAULT_PREVIEW_WIDTH / (float) UVCCamera.DEFAULT_PREVIEW_HEIGHT);
-        ((UVCCameraTextureView) mUVCCameraViewSecond).setOnClickListener(mOnClickListener);
-        mCaptureButtonSecond = (ImageButton) findViewById(R.id.capture_button_second);
-        mCaptureButtonSecond.setOnClickListener(mOnClickListener);
-        mCaptureButtonSecond.setVisibility(View.INVISIBLE);
-        mHandlerSecond = UVCCameraHandler.createHandler(this, mUVCCameraViewSecond, UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, BANDWIDTH_FACTORS[1]);
-    }
+    private RtmpHandler.RtmpListener rtmpListener = new RtmpHandler.RtmpListener() {
+        @Override
+        public void onRtmpConnecting(String msg) {
+            Log.d("shulan222","onRtmpConnecting-->" + msg);
+        }
+
+        @Override
+        public void onRtmpConnected(String msg) {
+            Log.d("shulan222","onRtmpConnected-->" + msg);
+        }
+
+        @Override
+        public void onRtmpVideoStreaming() {
+            Log.d("shulan222","onRtmpVideoStreaming-->");
+        }
+
+        @Override
+        public void onRtmpAudioStreaming() {
+            Log.d("shulan222","onRtmpAudioStreaming-->");
+        }
+
+        @Override
+        public void onRtmpStopped() {
+            Log.d("shulan222","onRtmpStopped-->");
+        }
+
+        @Override
+        public void onRtmpDisconnected() {
+            Log.d("shulan222","onRtmpDisconnected-->");
+        }
+
+        @Override
+        public void onRtmpVideoFpsChanged(double fps) {
+            Log.d("shulan222","onRtmpVideoFpsChanged-->" + fps);
+        }
+
+        @Override
+        public void onRtmpVideoBitrateChanged(double bitrate) {
+            Log.d("shulan222","onRtmpVideoBitrateChanged-->" + bitrate);
+        }
+
+        @Override
+        public void onRtmpAudioBitrateChanged(double bitrate) {
+            Log.d("shulan222","onRtmpAudioBitrateChanged-->" + bitrate);
+        }
+
+        @Override
+        public void onRtmpSocketException(SocketException e) {
+            Log.d("shulan222","onRtmpSocketException-->" + e.toString());
+        }
+
+        @Override
+        public void onRtmpIOException(IOException e) {
+            Log.d("shulan222","onRtmpIOException-->" + e.toString());
+        }
+
+        @Override
+        public void onRtmpIllegalArgumentException(IllegalArgumentException e) {
+            Log.d("shulan222","onRtmpIllegalArgumentException-->" + e.toString());
+        }
+
+        @Override
+        public void onRtmpIllegalStateException(IllegalStateException e) {
+            Log.d("shulan222","onRtmpIllegalStateException-->" + e.toString());
+        }
+    };
+
+    private RtmpHandler.RtmpListener rtmpListener1 = new RtmpHandler.RtmpListener() {
+        @Override
+        public void onRtmpConnecting(String msg) {
+            Log.d("shulan333", "onRtmpConnecting-->" + msg);
+        }
+
+        @Override
+        public void onRtmpConnected(String msg) {
+            Log.d("shulan333", "onRtmpConnected-->" + msg);
+        }
+
+        @Override
+        public void onRtmpVideoStreaming() {
+            Log.d("shulan333", "onRtmpVideoStreaming-->");
+        }
+
+        @Override
+        public void onRtmpAudioStreaming() {
+            Log.d("shulan333", "onRtmpAudioStreaming-->");
+        }
+
+        @Override
+        public void onRtmpStopped() {
+            Log.d("shulan333", "onRtmpStopped-->");
+        }
+
+        @Override
+        public void onRtmpDisconnected() {
+            Log.d("shulan333", "onRtmpDisconnected-->");
+        }
+
+        @Override
+        public void onRtmpVideoFpsChanged(double fps) {
+            Log.d("shulan333", "onRtmpVideoFpsChanged-->" + fps);
+        }
+
+        @Override
+        public void onRtmpVideoBitrateChanged(double bitrate) {
+            Log.d("shulan333", "onRtmpVideoBitrateChanged-->" + bitrate);
+        }
+
+        @Override
+        public void onRtmpAudioBitrateChanged(double bitrate) {
+            Log.d("shulan333", "onRtmpAudioBitrateChanged-->" + bitrate);
+        }
+
+        @Override
+        public void onRtmpSocketException(SocketException e) {
+            Log.d("shulan333", "onRtmpSocketException-->" + e.toString());
+        }
+
+        @Override
+        public void onRtmpIOException(IOException e) {
+            Log.d("shulan333", "onRtmpIOException-->" + e.toString());
+        }
+
+        @Override
+        public void onRtmpIllegalArgumentException(IllegalArgumentException e) {
+            Log.d("shulan333", "onRtmpIllegalArgumentException-->" + e.toString());
+        }
+
+        @Override
+        public void onRtmpIllegalStateException(IllegalStateException e) {
+            Log.d("shulan333", "onRtmpIllegalStateException-->" + e.toString());
+        }
+
+
+    };
+
+    private SrsRecordHandler.SrsRecordListener srsRecordListener = new SrsRecordHandler.SrsRecordListener() {
+        @Override
+        public void onRecordPause() {
+            Log.d("shulan222","onRecordPause");
+        }
+
+        @Override
+        public void onRecordResume() {
+
+        }
+
+        @Override
+        public void onRecordStarted(String msg) {
+
+        }
+
+        @Override
+        public void onRecordFinished(String msg) {
+
+        }
+
+        @Override
+        public void onRecordIllegalArgumentException(IllegalArgumentException e) {
+
+        }
+
+        @Override
+        public void onRecordIOException(IOException e) {
+
+        }
+    };
+
+    private SrsRecordHandler.SrsRecordListener srsRecordListener1 = new SrsRecordHandler.SrsRecordListener() {
+        @Override
+        public void onRecordPause() {
+
+        }
+
+        @Override
+        public void onRecordResume() {
+
+        }
+
+        @Override
+        public void onRecordStarted(String msg) {
+
+        }
+
+        @Override
+        public void onRecordFinished(String msg) {
+
+        }
+
+        @Override
+        public void onRecordIllegalArgumentException(IllegalArgumentException e) {
+
+        }
+
+        @Override
+        public void onRecordIOException(IOException e) {
+
+        }
+    };
+
+
+    private SrsEncodeHandler.SrsEncodeListener srsEncodeListener1 = new SrsEncodeHandler.SrsEncodeListener() {
+        @Override
+        public void onNetworkWeak() {
+
+        }
+
+        @Override
+        public void onNetworkResume() {
+
+        }
+
+        @Override
+        public void onEncodeIllegalArgumentException(IllegalArgumentException e) {
+            Log.e(com.kakabuli.camerastream.MainActivity.class.getSimpleName(), e.toString());
+        }
+    };
+
+    private SrsEncodeHandler.SrsEncodeListener srsEncodeListener = new SrsEncodeHandler.SrsEncodeListener() {
+        @Override
+        public void onNetworkWeak() {
+
+        }
+
+        @Override
+        public void onNetworkResume() {
+
+        }
+
+        @Override
+        public void onEncodeIllegalArgumentException(IllegalArgumentException e) {
+            Log.e(com.kakabuli.camerastream.MainActivity.class.getSimpleName(), e.toString());
+        }
+    };
 
     @Override
     protected void onStart() {
         super.onStart();
-        mUSBMonitor.register();
-        if (mUVCCameraViewSecond != null)
-            mUVCCameraViewSecond.onResume();
-        if (mUVCCameraViewFirst != null)
-            mUVCCameraViewFirst.onResume();
+        usbMonitor.register();
+        uvcPublisher.startPreview();
+        uvcPublisher1.startPreview();
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        uvcPublisher.resumeRecord();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                getUserToken();
+            }
+        },800);
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        uvcPublisher.pauseRecord();
+        uvcPublisher1.pauseRecord();
     }
 
     @Override
     protected void onStop() {
-        mHandlerFirst.close();
-        if (mUVCCameraViewFirst != null)
-            mUVCCameraViewFirst.onPause();
-        mCaptureButtonFirst.setVisibility(View.INVISIBLE);
-
-        mHandlerSecond.close();
-        if (mUVCCameraViewSecond != null)
-            mUVCCameraViewSecond.onPause();
-        mCaptureButtonSecond.setVisibility(View.INVISIBLE);
-
-        mUSBMonitor.unregister();//usb管理器解绑
         super.onStop();
+        uvcPublisher.stopPreview();
+        uvcPublisher1.stopPreview();
+        usbMonitor.unregister();
     }
 
     @Override
     protected void onDestroy() {
-        if (mHandlerFirst != null) {
-            mHandlerFirst = null;
-        }
-
-        if (mHandlerSecond != null) {
-            mHandlerSecond = null;
-        }
-
-        if (mUSBMonitor != null) {
-            mUSBMonitor.destroy();
-            mUSBMonitor = null;
-        }
-
-        mUVCCameraViewFirst = null;
-        mCaptureButtonFirst = null;
-
-        mUVCCameraViewSecond = null;
-        mCaptureButtonSecond = null;
-
         super.onDestroy();
+        uvcPublisher.stopPublish();
+        uvcPublisher1.stopPublish();
+        uvcPublisher1.stopRecord();
+        uvcPublisher.stopRecord();
+        usbMonitor.unregister();
     }
 
-    private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(final View view) {
-            switch (view.getId()) {
-                case R.id.camera_view_first:
-                    if (mHandlerFirst != null) {
-                        if (!mHandlerFirst.isOpened()) {
-                            CameraDialog.showDialog(MainActivity.this);
-                        } else {
-                            mHandlerFirst.close();
-                            setCameraButton();
-                        }
-                    }
-                    break;
-                case R.id.capture_button_first:
-                    if (mHandlerFirst != null) {
-                        if (mHandlerFirst.isOpened()) {
-                            if (checkPermissionWriteExternalStorage() && checkPermissionAudio()) {
-                                if (!mHandlerFirst.isRecording()) {
-                                    mCaptureButtonFirst.setColorFilter(0xffff0000);    // turn red
-                                    mHandlerFirst.startRecording();
-                                } else {
-                                    mCaptureButtonFirst.setColorFilter(0);    // return to default color
-                                    mHandlerFirst.stopRecording();
-                                }
-                            }
-                        }
-                    }
-                    break;
-                case R.id.camera_view_second:
-                    if (mHandlerSecond != null) {
-                        if (!mHandlerSecond.isOpened()) {
-                            CameraDialog.showDialog(MainActivity.this);
-                        } else {
-                            mHandlerSecond.close();
-                            setCameraButton();
-                        }
-                    }
-                    break;
-                case R.id.capture_button_second:
-                    if (mHandlerSecond != null) {
-                        if (mHandlerSecond.isOpened()) {
-                            if (checkPermissionWriteExternalStorage() && checkPermissionAudio()) {
-                                if (!mHandlerSecond.isRecording()) {
-                                    mCaptureButtonSecond.setColorFilter(0xffff0000);    // turn red
-                                    mHandlerSecond.startRecording();
-                                } else {
-                                    mCaptureButtonSecond.setColorFilter(0);    // return to default color
-                                    mHandlerSecond.stopRecording();
-                                }
-                            }
-                        }
-                    }
-                    break;
-            }
-        }
-    };
-
-    private final USBMonitor.OnDeviceConnectListener mOnDeviceConnectListener = new USBMonitor.OnDeviceConnectListener() {
-        @Override
-        public void onAttach(final UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onAttach:" + device);
-            Toast.makeText(MainActivity.this, "USB_DEVICE_ATTACHED", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onConnect(final UsbDevice device, final USBMonitor.UsbControlBlock ctrlBlock, final boolean createNew) {
-            //设备连接成功
-            if (DEBUG) Log.v(TAG, "onConnect:" + device);
-            if (!mHandlerFirst.isOpened()) {
-                mHandlerFirst.open(ctrlBlock);
-                final SurfaceTexture st = mUVCCameraViewFirst.getSurfaceTexture();
-                mHandlerFirst.startPreview(new Surface(st));
-
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCaptureButtonFirst.setVisibility(View.VISIBLE);
-                    }
-                });
-            } else if (!mHandlerSecond.isOpened()) {
-                mHandlerSecond.open(ctrlBlock);
-                final SurfaceTexture st = mUVCCameraViewSecond.getSurfaceTexture();
-                mHandlerSecond.startPreview(new Surface(st));
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCaptureButtonSecond.setVisibility(View.VISIBLE);
-                    }
-                });
-            }
-        }
-
-        @Override
-        public void onDisconnect(final UsbDevice device, final USBMonitor.UsbControlBlock ctrlBlock) {
-            if (DEBUG) Log.v(TAG, "onDisconnect:" + device);
-            if ((mHandlerFirst != null) && !mHandlerFirst.isEqual(device)) {
-                queueEvent(new Runnable() {
-                    @Override
-                    public void run() {
-                        mHandlerFirst.close();
-                        if (mFirstPreviewSurface != null) {
-                            mFirstPreviewSurface.release();
-                            mFirstPreviewSurface = null;
-                        }
-                        setCameraButton();
-                    }
-                }, 0);
-            } else if ((mHandlerSecond != null) && !mHandlerSecond.isEqual(device)) {
-                queueEvent(new Runnable() {
-                    @Override
-                    public void run() {
-                        mHandlerSecond.close();
-                        if (mSecondPreviewSurface != null) {
-                            mSecondPreviewSurface.release();
-                            mSecondPreviewSurface = null;
-                        }
-                        setCameraButton();
-                    }
-                }, 0);
-            }
-        }
-
-        @Override
-        public void onDettach(final UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onDettach:" + device);
-            Toast.makeText(MainActivity.this, "USB_DEVICE_DETACHED", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onCancel(final UsbDevice device) {
-            if (DEBUG) Log.v(TAG, "onCancel:");
-        }
-    };
+    //================================================================================
 
     /**
-     * to access from CameraDialog
+     * MessageDialogFragmentメッセージダイアログからのコールバックリスナー
      *
-     * @return
+     * @param dialog
+     * @param requestCode
+     * @param permissions
+     * @param result
+     */
+    @SuppressLint("NewApi")
+    @Override
+    public void onMessageDialogResult(final MessageDialogFragment dialog, final int requestCode, final String[] permissions, final boolean result) {
+        if (result) {
+            // メッセージダイアログでOKを押された時はパーミッション要求する
+            if (BuildCheck.isMarshmallow()) {
+                requestPermissions(permissions, requestCode);
+                return;
+            }
+        }
+        // メッセージダイアログでキャンセルされた時とAndroid6でない時は自前でチェックして#checkPermissionResultを呼び出す
+        for (final String permission : permissions) {
+            checkPermissionResult(requestCode, permission, PermissionCheck.hasPermission(this, permission));
+        }
+    }
+
+    /**
+     * パーミッション要求結果を受け取るためのメソッド
+     *
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
      */
     @Override
+    public void onRequestPermissionsResult(final int requestCode, final String[] permissions, final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);    // 何もしてないけど一応呼んどく
+        final int n = Math.min(permissions.length, grantResults.length);
+        for (int i = 0; i < n; i++) {
+            checkPermissionResult(requestCode, permissions[i], grantResults[i] == PackageManager.PERMISSION_GRANTED);
+        }
+    }
+
+    /**
+     * パーミッション要求の結果をチェック
+     * ここではパーミッションを取得できなかった時にToastでメッセージ表示するだけ
+     *
+     * @param requestCode
+     * @param permission
+     * @param result
+     */
+    protected void checkPermissionResult(final int requestCode, final String permission, final boolean result) {
+        // パーミッションがないときにはメッセージを表示する
+        if (!result && (permission != null)) {
+            if (Manifest.permission.RECORD_AUDIO.equals(permission)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(com.kakabuli.camerastream.MainActivity.this, R.string.permission_audio, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+            if (Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(permission)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(com.kakabuli.camerastream.MainActivity.this, R.string.permission_ext_storage, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+            if (Manifest.permission.INTERNET.equals(permission)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(com.kakabuli.camerastream.MainActivity.this, R.string.permission_network, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        }
+    }
+
+    // 動的パーミッション要求時の要求コード
+    protected static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 0x12345;
+    protected static final int REQUEST_PERMISSION_AUDIO_RECORDING = 0x234567;
+    protected static final int REQUEST_PERMISSION_NETWORK = 0x345678;
+    protected static final int REQUEST_PERMISSION_CAMERA = 0x537642;
+
+    /**
+     * 外部ストレージへの書き込みパーミッションが有るかどうかをチェック
+     * なければ説明ダイアログを表示する
+     *
+     * @return true 外部ストレージへの書き込みパーミッションが有る
+     */
+    protected boolean checkPermissionWriteExternalStorage() {
+        if (!PermissionCheck.hasWriteExternalStorage(this)) {
+            MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
+                    R.string.permission_title, R.string.permission_ext_storage_request,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 録音のパーミッションが有るかどうかをチェック
+     * なければ説明ダイアログを表示する
+     *
+     * @return true 録音のパーミッションが有る
+     */
+    protected boolean checkPermissionAudio() {
+        if (!PermissionCheck.hasAudio(this)) {
+            MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_AUDIO_RECORDING,
+                    R.string.permission_title, R.string.permission_audio_recording_request,
+                    new String[]{Manifest.permission.RECORD_AUDIO});
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * ネットワークアクセスのパーミッションが有るかどうかをチェック
+     * なければ説明ダイアログを表示する
+     *
+     * @return true ネットワークアクセスのパーミッションが有る
+     */
+    protected boolean checkPermissionNetwork() {
+        if (!PermissionCheck.hasNetwork(this)) {
+            MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_NETWORK,
+                    R.string.permission_title, R.string.permission_network_request,
+                    new String[]{Manifest.permission.INTERNET});
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * カメラアクセスのパーミッションがあるかどうかをチェック
+     * なければ説明ダイアログを表示する
+     *
+     * @return true カメラアクセスのパーミッションが有る
+     */
+    protected boolean checkPermissionCamera() {
+        if (!PermissionCheck.hasCamera(this)) {
+            MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_CAMERA,
+                    R.string.permission_title, R.string.permission_camera_request,
+                    new String[]{Manifest.permission.CAMERA});
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public USBMonitor getUSBMonitor() {
-        return mUSBMonitor;
+        return usbMonitor;
     }
 
     @Override
     public void onDialogResult(boolean canceled) {
-        if (canceled) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    setCameraButton();
-                }
-            }, 0);
-        }
+
     }
 
-    private void setCameraButton() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if ((mHandlerFirst != null) && !mHandlerFirst.isOpened() && (mCaptureButtonFirst != null)) {
-                    mCaptureButtonFirst.setVisibility(View.INVISIBLE);
-                }
-                if ((mHandlerSecond != null) && !mHandlerSecond.isOpened() && (mCaptureButtonSecond != null)) {
-                    mCaptureButtonSecond.setVisibility(View.INVISIBLE);
-                }
-            }
-        }, 0);
+    public void onTask(View view) {
+        if(mMySocket != null && mMySocket.isOpen()){
+            mMySocket.send("");
+        }
     }
 }

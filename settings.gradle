@@ -1,4 +1,2 @@
-include ':usbCameraCommon'
-include ':libuvccamera'
-include ':app'
+include ':app', ':uvccamera', ':yasea'
 rootProject.name = "CameraStreamPlugin"
