@@ -71,6 +71,10 @@
                 <action android:name="com.serenegiant.service.IUVCSlaveService" />
             </intent-filter>
         </service>
+
+        <service android:name="com.kakabuli.service.CameraStreamService">
+            
+        </service>
     </application>
 
 </manifest>
