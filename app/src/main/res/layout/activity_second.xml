@@ -19,5 +19,12 @@
         android:text="stopServer"
         android:onClick="stopServer"/>
 
+    <Button
+        android:layout_marginTop="100dp"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:text="startActivity"
+        android:onClick="startMainactivity"/>
+
 
 </RelativeLayout>

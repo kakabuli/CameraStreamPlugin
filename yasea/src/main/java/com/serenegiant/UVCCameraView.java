@@ -3,6 +3,7 @@ package com.serenegiant;
 import android.content.Context;
 import android.hardware.usb.UsbDevice;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Surface;
 
 import com.serenegiant.usb.IFrameCallback;
@@ -163,6 +164,10 @@ public class UVCCameraView extends UVCCameraTextureView {
     private IFrameCallback frameCallback = new IFrameCallback() {
         @Override
         public void onFrame(ByteBuffer frame) {
+            int len = frame.capacity();
+            final byte[] yuv = new byte[len];
+            frame.get(yuv);
+            Log.d("shulan_UVCCameraView", "-摄像头返回数据------" + yuv.length);
             if (isEncoding) {
                 if (videoBuffer == null) {
                     videoBuffer = ByteBuffer.allocate(frame.limit());

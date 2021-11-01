@@ -47,8 +47,7 @@ public class RtmpPublisher {
                 calcSamplingFps();
                 if (!sendAudioOnly) {
                     Log.d(TAG,"有数据了++++++++++++++++++++");
-//                    mEncoder.onGetYuvFrame(data);
-                    mEncoder.onGetRgbaFrame(data,width,height);
+                    mEncoder.onGetYuvFrame(data);
                 }
             }
         });

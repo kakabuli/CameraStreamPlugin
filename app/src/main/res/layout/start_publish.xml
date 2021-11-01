@@ -12,10 +12,12 @@
     <com.serenegiant.UVCCameraView
         android:id="@+id/camera02"
         android:layout_width="50dp"
+        android:layout_marginLeft="50dp"
         android:layout_height="50dp"/>
 
     <TextView
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:background="#ffffff"/>
+        android:background="#ffffff"
+        android:visibility="gone"/>
 </RelativeLayout>

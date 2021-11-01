@@ -154,24 +154,6 @@ static void libenc_setEncoderResolution(JNIEnv* env, jobject thiz, jint out_widt
 }
 
 // For COLOR_FormatYUV420Planar
-static jbyteArray libenc_RGBAToI420(JNIEnv *env, jobject thiz, jbyteArray frame, jint src_width,
-                                    jint src_height, jboolean need_flip, jint rotate_degree) {
-    jbyte *rgba_frame = env->GetByteArrayElements(frame, NULL);
-
-    if (!convert_to_i420((uint8_t *) rgba_frame, src_width, src_height, need_flip, rotate_degree,
-                         FOURCC_RGBA)) {
-        return NULL;
-    }
-
-    int y_size = i420_scaled_frame.width * i420_scaled_frame.height;
-    jbyteArray i420Frame = env->NewByteArray(y_size * 3 / 2);
-    env->SetByteArrayRegion(i420Frame, 0, y_size * 3 / 2, (jbyte *) i420_scaled_frame.data);
-
-    env->ReleaseByteArrayElements(frame, rgba_frame, JNI_ABORT);
-    return i420Frame;
-}
-
-// For COLOR_FormatYUV420Planar
 static jbyteArray libenc_NV21ToI420(JNIEnv* env, jobject thiz, jbyteArray frame, jint src_width,
                                     jint src_height, jboolean need_flip, jint rotate_degree) {
     jbyte* nv21_frame = env->GetByteArrayElements(frame, NULL);

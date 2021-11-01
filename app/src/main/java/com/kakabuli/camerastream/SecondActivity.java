@@ -25,4 +25,9 @@ public class SecondActivity extends Activity {
         Intent stopServer = new Intent(this, CameraStreamService.class);
         stopService(stopServer);
     }
+
+    public void startMainactivity(View view) {
+        Intent stopServer = new Intent(this, MainActivity.class);
+        startActivity(stopServer);
+    }
 }

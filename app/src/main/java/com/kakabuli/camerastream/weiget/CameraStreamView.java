@@ -32,8 +32,11 @@ public class CameraStreamView {
     private final Object writeLock = new Object();
     private ConcurrentLinkedQueue<ByteBuffer> videoBufferQueue = new ConcurrentLinkedQueue<>();
 
+    private final SurfaceTexture surfaceTexture;
+
     public CameraStreamView(Context context){
         this.mContext = context;
+        surfaceTexture = new SurfaceTexture(ShaderConst.GL_TEXTURE_EXTERNAL_OES);
     }
 
 
@@ -69,11 +72,11 @@ public class CameraStreamView {
 //        if (surface != null) {
 //            uvcCamera.setPreviewDisplay(surface);
 
-        SurfaceTexture surfaceTexture = new SurfaceTexture(ShaderConst.GL_TEXTURE_EXTERNAL_OES);
+
         uvcCamera.setPreviewTexture(surfaceTexture);
         Log.d("shulan_CameraStreamView","startCamera---");
 //        uvcCamera.setFrameCallback(frameCallback, UVCCamera.PIXEL_FORMAT_YUV420SP);
-        uvcCamera.setFrameCallback(frameCallback, UVCCamera.PIXEL_FORMAT_YUV);
+        uvcCamera.setFrameCallback(frameCallback, UVCCamera.PIXEL_FORMAT_RAW);
         uvcCamera.startPreview();
         uvcCamera.updateCameraParams();
         return uvcCamera;
