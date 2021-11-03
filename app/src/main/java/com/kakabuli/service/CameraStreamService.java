@@ -23,7 +23,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO 后台获取数据
+//后台获取数据
 public class CameraStreamService extends Service {
 
     private UVCCamera uvcCameraFirst;

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -17,6 +18,7 @@ import android.widget.Toast;
 import com.github.faucamp.simplertmp.RtmpHandler;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.kakabuli.camerastream.socket.result.VideoPlayResult;
 import com.serenegiant.UVCCameraView;
 import com.serenegiant.UVCPublisher;
 import com.serenegiant.dialog.MessageDialogFragment;
@@ -57,9 +59,9 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
     private UVCCamera uvcCameraSecond;
     private UVCPublisher uvcPublisher;
     private UVCPublisher uvcPublisher1;
-    private static String RTMP_URL_01 = "rtmp://118.190.36.40/devices/13723789649";
-//    private static String RTMP_URL_01 = "rtmp://192.168.1.100:1935/myapp/camera01";
-    private static String RTMP_URL_02 = "rtmp://192.168.1.100:1935/myapp/camera02";
+//    private static String RTMP_URL_01 = "";//rtmp://118.190.36.40/devices/13723789649
+    private static String RTMP_URL_01 = "rtmp://192.168.1.100:1935/myapp/camera01";
+    private static String RTMP_URL_02 = "rtmp://192.168.1.100:1935/myapp/camera02";//rtmp://192.168.1.100:1935/myapp/camera02
 
     private String token = "";
 
@@ -108,6 +110,15 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
         });
     }
 
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0){
+            moveTaskToBack(true);
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
     private void initSocket(String deviceToken) {
         Log.d("liuhai_MySocket","initSocket------------");
         mMySocket = new MySocket(URI.create(SocketConstants.SOCKET_URL + SocketConstants.LOGIN + deviceToken), new IRTMPListener() {
@@ -123,15 +134,17 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
                 switch (mBaseResult.getType()){
                     case Constants.TASK_LOGIN:
                         break;
+//                    case Constants.VIDEO_PLAY:
                     case Constants.TASK_CHECK_CALLBACK:
-                       /* try{
+                        try{
                             VideoPlayResult mVideoPlayResult = new Gson().fromJson(message, new TypeToken<VideoPlayResult>() {}.getType());
                             Log.e("shulan111","mVideoPlayResult--->" + mVideoPlayResult.toString());
                             Log.e("shulan111","mVideoPlayResult.getData().getRtmpUrl()--->" + mVideoPlayResult.getData().getRtmpUrl());
-                            RTMP_URL_01 = mVideoPlayResult.getData().getRtmpUrl();
+                            if(!TextUtils.isEmpty(mVideoPlayResult.getData().getRtmpUrl()))
+                                RTMP_URL_01 = mVideoPlayResult.getData().getRtmpUrl();
                         }catch (Exception e){
 
-                        }*/
+                        }
                         requestUSBMonitor();
                         break;
                     case Constants.VIDEO_PLAY_STOP:
@@ -267,7 +280,8 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
                     });
                     return;
                 }
-                uvcPublisher.startPublish(RTMP_URL_01);
+                if(!TextUtils.isEmpty(RTMP_URL_01))
+                    uvcPublisher.startPublish(RTMP_URL_01);
                 isFirst = true;
             }else if(!uvcPublisher1.isOpened()){
                 uvcPublisher1.stopCamera();
@@ -281,7 +295,8 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
                     });
                     return;
                 }
-                uvcPublisher1.startPublish(RTMP_URL_02);
+                if(!TextUtils.isEmpty(RTMP_URL_02))
+                    uvcPublisher1.startPublish(RTMP_URL_02);
             }
 
 

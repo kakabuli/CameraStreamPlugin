@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.kakabuli.service.CameraStreamService;
+import com.kakabuli.service.UVCCameraStreamService;
 
 public class SecondActivity extends Activity {
 
@@ -17,12 +18,13 @@ public class SecondActivity extends Activity {
 
     public void startServer(View view) {
 
-        Intent startServer = new Intent(this, CameraStreamService.class);
+        Intent startServer = new Intent(this, UVCCameraStreamService.class);
         startService(startServer);
+        finish();
     }
 
     public void stopServer(View view) {
-        Intent stopServer = new Intent(this, CameraStreamService.class);
+        Intent stopServer = new Intent(this, UVCCameraStreamService.class);
         stopService(stopServer);
     }
 
