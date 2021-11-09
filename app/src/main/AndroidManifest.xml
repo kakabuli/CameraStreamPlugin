@@ -67,8 +67,17 @@
                 android:resource="@xml/device_filter" />
         </activity>
         <activity android:name=".MainActivity">
-
         </activity>
+
+        <activity android:name="com.kakabuli.video.VideoActivity"/>
+
+        <activity android:name="com.kakabuli.voice.NlpVoiceActivity"/>
+
+        <activity android:name="com.kakabuli.voice.VoiceCheckActivity"/>
+
+        <service android:name="com.kakabuli.voice.VoiceService"/>
+
+        <service android:name="com.kakabuli.service.WorkService"/>
 
         <service
             android:name="com.kakabuli.service.UVCService"

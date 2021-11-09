@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rightLayout"
+    android:layout_width="300dp"
+    android:layout_height="match_parent"
+    android:layout_gravity="end"
+    android:background="@color/white"
+    android:padding="5dp"
+    tools:showIn="@layout/activity_nlp">
+
+    <!--log 相关-->
+    <TextView
+        android:id="@+id/log_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:text="@string/save_log"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/logSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textOff="@string/no"
+        android:textOn="@string/yes"
+        app:layout_constraintBottom_toBottomOf="@id/log_text"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/log_text"
+        app:showText="false" />
+
+    <View
+        android:id="@+id/viewLineLog"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_marginTop="2dp"
+        android:background="@color/gray"
+        app:layout_constraintTop_toBottomOf="@id/logSwitch" />
+
+
+    <!--扫频测试 相关-->
+    <TextView
+        android:id="@+id/pcm_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="@string/pcm_log"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/viewLineLog" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/pcmSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textOff="@string/no"
+        android:textOn="@string/yes"
+        app:layout_constraintBottom_toBottomOf="@id/pcm_text"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/pcm_text"
+        app:showText="false" />
+
+    <View
+        android:id="@+id/viewLinePcm"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_marginTop="2dp"
+        android:background="@color/gray"
+        app:layout_constraintTop_toBottomOf="@id/logSwitch" />
+
+    <!--手动开关唤醒相关-->
+    <Button
+        android:id="@+id/startWakeToAsr"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:text="@string/start_wake"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/stopWakeToAsr"
+        app:layout_constraintTop_toBottomOf="@id/viewLinePcm" />
+
+    <Button
+        android:id="@+id/stopWakeToAsr"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/stop_wake"
+        app:layout_constraintBottom_toBottomOf="@id/startWakeToAsr"
+        app:layout_constraintLeft_toRightOf="@id/startWakeToAsr"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/startWakeToAsr" />
+
+    <View
+        android:id="@+id/viewLineWake"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_marginTop="2dp"
+        android:background="@color/gray"
+        app:layout_constraintTop_toBottomOf="@id/startWakeToAsr" />
+
+    <!--tts -->
+    <EditText
+        android:id="@+id/ttsInput"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginTop="20dp"
+        android:background="@color/gray"
+        android:gravity="top|start"
+        android:hint="@string/tts_hint"
+        app:layout_constraintTop_toBottomOf="@id/viewLineWake" />
+
+    <Button
+        android:id="@+id/startPlayTts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:text="@string/start_tts"
+        app:layout_constraintTop_toBottomOf="@id/ttsInput" />
+
+    <View
+        android:id="@+id/viewLineTts"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_marginTop="2dp"
+        android:background="@color/gray"
+        app:layout_constraintTop_toBottomOf="@id/startPlayTts" />
+
+
+    <Button
+        android:id="@+id/exitApp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/app_exit"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

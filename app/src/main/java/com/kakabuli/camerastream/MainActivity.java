@@ -77,38 +77,6 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
         initData();
     }
 
-    private void getUserToken() {
-        NewServiceImp.login(/*"13723789649","123456"*/"admin","admin").subscribe(new Observer<LoginResult>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable d) {
-                Log.d("shulan_http","onSubscribe");
-            }
-
-            @Override
-            public void onNext(@NonNull LoginResult loginResult) {
-                Log.d("shulan_http","onNext-->" + loginResult.toString());
-
-                if(loginResult.getMeta().getCode() == 200 && loginResult.getMeta().isSuccess()) {
-                    if(!TextUtils.isEmpty(loginResult.getData().getToken())){
-                        token =  loginResult.getData().getToken();
-                        MMKVUtils.setMMKV(Constants.DEVICE_TOKEN,loginResult.getData().getToken());
-                    }
-                }
-            }
-
-            @Override
-            public void onError(@NonNull Throwable e) {
-                Log.d("shulan_http","onError");
-            }
-
-            @Override
-            public void onComplete() {
-                Log.d("shulan_http","onComplete");
-                if(!TextUtils.isEmpty(token))
-                    initSocket(token);
-            }
-        });
-    }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -585,13 +553,9 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
     protected void onResume() {
         super.onResume();
         uvcPublisher.resumeRecord();
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                getUserToken();
-            }
-        },800);
-
+        if(!TextUtils.isEmpty(MyApplication.getInstance().getToken())){
+            initSocket(MyApplication.getInstance().getToken());
+        }
     }
 
     @Override
