@@ -35,6 +35,7 @@ import com.kakabuli.camerastream.socket.SocketConstants;
 import com.kakabuli.camerastream.socket.result.BaseResult;
 import com.kakabuli.camerastream.utils.Constants;
 import com.kakabuli.camerastream.utils.MMKVUtils;
+import com.tencent.mmkv.MMKV;
 
 import net.ossrs.yasea.SrsEncodeHandler;
 import net.ossrs.yasea.SrsRecordHandler;
@@ -59,9 +60,9 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
     private UVCCamera uvcCameraSecond;
     private UVCPublisher uvcPublisher;
     private UVCPublisher uvcPublisher1;
-//    private static String RTMP_URL_01 = "";//rtmp://118.190.36.40/devices/13723789649
-    private static String RTMP_URL_01 = "rtmp://192.168.1.100:1935/myapp/camera01";
-    private static String RTMP_URL_02 = "rtmp://192.168.1.100:1935/myapp/camera02";//rtmp://192.168.1.100:1935/myapp/camera02
+    private static String RTMP_URL_01 = "rtmp://118.190.36.40/devices/13723789649";//rtmp://118.190.36.40/devices/13723789649
+//    private static String RTMP_URL_01 = "rtmp://192.168.1.100:1935/myapp/camera01";
+    private static String RTMP_URL_02 = "";//rtmp://192.168.1.100:1935/myapp/camera02
 
     private String token = "";
 
@@ -102,8 +103,8 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
                 switch (mBaseResult.getType()){
                     case Constants.TASK_LOGIN:
                         break;
-//                    case Constants.VIDEO_PLAY:
-                    case Constants.TASK_CHECK_CALLBACK:
+                    case Constants.VIDEO_PLAY:
+//                    case Constants.TASK_CHECK_CALLBACK://TODO 2021-11-10 需要测试rtmp打开这个
                         try{
                             VideoPlayResult mVideoPlayResult = new Gson().fromJson(message, new TypeToken<VideoPlayResult>() {}.getType());
                             Log.e("shulan111","mVideoPlayResult--->" + mVideoPlayResult.toString());
@@ -553,9 +554,58 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
     protected void onResume() {
         super.onResume();
         uvcPublisher.resumeRecord();
-        if(!TextUtils.isEmpty(MyApplication.getInstance().getToken())){
-            initSocket(MyApplication.getInstance().getToken());
-        }
+        /*new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                getUserToken();
+            }
+        },800);*/
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if(!TextUtils.isEmpty(MyApplication.getInstance().getToken()) || !TextUtils.isEmpty(MMKVUtils.getStringMMKV(Constants.DEVICE_TOKEN))){
+                    if(TextUtils.isEmpty(MyApplication.getInstance().getToken())){
+                        initSocket(MMKVUtils.getStringMMKV(Constants.DEVICE_TOKEN));
+                    }else{
+                        initSocket(MyApplication.getInstance().getToken());
+                    }
+                }
+            }
+        },1500);
+
+    }
+
+    private void getUserToken() {
+        NewServiceImp.login(/*"13723789649","123456"*/"admin","admin").subscribe(new Observer<LoginResult>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+                Log.d("shulan_http","onSubscribe");
+            }
+
+            @Override
+            public void onNext(@NonNull LoginResult loginResult) {
+                Log.d("shulan_http","onNext-->" + loginResult.toString());
+
+                if(loginResult.getMeta().getCode() == 200 && loginResult.getMeta().isSuccess()) {
+                    if(!TextUtils.isEmpty(loginResult.getData().getToken())){
+                        token =  loginResult.getData().getToken();
+                        MMKVUtils.setMMKV(Constants.DEVICE_TOKEN,loginResult.getData().getToken());
+                    }
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                Log.d("shulan_http","onError");
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d("shulan_http","onComplete");
+                if(!TextUtils.isEmpty(token))
+                    initSocket(token);
+            }
+        });
     }
 
     @Override

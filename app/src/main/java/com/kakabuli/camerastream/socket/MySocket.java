@@ -84,7 +84,7 @@ public class MySocket extends WebSocketClient {
                 new TypeToken<BaseResult>() {}.getType());
         switch (mBaseResult.getType()){
             case Constants.TASK_LOGIN:
-                sendTaskCheck();
+//                sendTaskCheck();//TODO 2021-11-10 需要测试rtmp打开这个
                 break;
 
             case Constants.TASK_CHECK_CALLBACK:

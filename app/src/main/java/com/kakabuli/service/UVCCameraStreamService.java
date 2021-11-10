@@ -50,7 +50,7 @@ public class UVCCameraStreamService extends Service {
     WindowManager.LayoutParams layoutParams;
 
     private boolean isFirst;
-private UVCCamera uvcCameraFirst;
+    private UVCCamera uvcCameraFirst;
     private UVCCamera uvcCameraSecond;
 
     private static String RTMP_URL_01 = "rtmp://192.168.1.100:1935/myapp/camera01";

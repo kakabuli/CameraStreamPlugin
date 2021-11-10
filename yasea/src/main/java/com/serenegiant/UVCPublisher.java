@@ -176,11 +176,11 @@ public class UVCPublisher {
 
         mCameraView.enableEncoding();
 
-        startAudio();
+//        startAudio();
     }
 
     public void stopEncode() {
-        stopAudio();
+//        stopAudio();
         stopCamera();
         mEncoder.stop();
     }
