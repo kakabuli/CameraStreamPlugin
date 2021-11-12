@@ -161,6 +161,9 @@ public class CameraStreamView {
         }
     }
 
+    /**
+     * UVCCamera预览数据，帧回调
+     */
     private IFrameCallback frameCallback = new IFrameCallback() {
         @Override
         public void onFrame(ByteBuffer frame) {

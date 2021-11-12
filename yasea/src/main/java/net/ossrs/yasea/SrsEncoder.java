@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by Leo Ma on 4/1/2016.
+ * 音视频流编码器
  */
 public class SrsEncoder {
     private static final String TAG = "SrsEncoder";

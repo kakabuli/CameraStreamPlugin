@@ -58,7 +58,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Created by LeoMa on 2016/5/21.
+ * 本地录屏Mp4 混合器
  */
 public class SrsMp4Muxer {
 

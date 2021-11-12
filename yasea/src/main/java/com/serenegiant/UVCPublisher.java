@@ -19,7 +19,7 @@ import net.ossrs.yasea.SrsRecordHandler;
 import java.io.File;
 
 /**
- * Created by yyw on 2018/8/16.
+ * UVC Camera推流控制器
  */
 public class UVCPublisher {
     private UVCCameraView mCameraView;

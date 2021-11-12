@@ -31,6 +31,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+/** 后台悬浮球预览UVC Camera服务
+ *  存在问题windowManager下预览一段时间，系统会卡顿，死机
+ */
 public class UVCCameraStreamService extends Service {
     private static final String TAG = "UVCCameraStreamService";
 

@@ -15,6 +15,9 @@ import org.java_websocket.handshake.ServerHandshake;
 import java.net.URI;
 import java.nio.ByteBuffer;
 
+/**
+ *  需要在常驻服务去拉活socket，保持长连接，未实现
+ */
 public class MySocket extends WebSocketClient {
 
     private final IRTMPListener mRtmpListener;
@@ -84,7 +87,7 @@ public class MySocket extends WebSocketClient {
                 new TypeToken<BaseResult>() {}.getType());
         switch (mBaseResult.getType()){
             case Constants.TASK_LOGIN:
-//                sendTaskCheck();//TODO 2021-11-10 需要测试rtmp打开这个
+//                sendTaskCheck();//TODO 2021-11-10 需要测试rtmp打开这个，websocket登录之后，拉取当前任务信息，模拟VIDEO_PLAY指令
                 break;
 
             case Constants.TASK_CHECK_CALLBACK:

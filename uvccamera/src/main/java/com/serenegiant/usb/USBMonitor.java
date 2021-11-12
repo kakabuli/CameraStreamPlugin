@@ -79,7 +79,7 @@ public final class USBMonitor {
 	private final Handler mAsyncHandler;
 	private volatile boolean destroyed;
 	/**
-	 * USB機器の状態変更時のコールバックリスナー
+	 * 监听USB设备状态回调
 	 */
 	public interface OnDeviceConnectListener {
 		/**

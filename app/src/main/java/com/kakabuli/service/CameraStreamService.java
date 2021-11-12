@@ -23,7 +23,13 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
-//后台获取数据
+/** 后台获取数据，可行性高
+ *  IFrameCallback，UVCCamera预览的每一帧都有回调
+ *  数据1382400，通道数height * width * 2 / 3 (YUV420 NV21)
+ *  修改libenc.cc --> git log : 182c41327e9ab60832bc2162eaeef5c4206ea0de
+ *  导致绿屏，不确定lienc.so问题，还是SPS & PPS 参数问题那一部分对不上
+ */
+
 public class CameraStreamService extends Service {
 
     private UVCCamera uvcCameraFirst;

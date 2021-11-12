@@ -19,6 +19,9 @@ import net.ossrs.yasea.SrsRecordHandler;
 
 import java.io.File;
 
+/**
+ *  后台服务 Rtmp推流控制器
+ */
 public class RtmpPublisher {
     private final static String TAG = "shulan RtmpPublisher";
     private CameraStreamView mCameraStreamView;

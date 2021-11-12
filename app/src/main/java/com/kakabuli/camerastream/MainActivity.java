@@ -50,24 +50,29 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 
+/** 双UVC Camera 前台预览推流界面
+ *
+ */
 public class MainActivity extends Activity implements MessageDialogFragment.MessageDialogListener, CameraDialog.CameraDialogParent {
     private UVCCameraView uvcCameraView;
     private UVCCameraView uvcCameraView1;
     private Button btn_start;
 
+    //USB挂载设备的控制器
     private USBMonitor usbMonitor;
     private UVCCamera uvcCameraFirst;
     private UVCCamera uvcCameraSecond;
     private UVCPublisher uvcPublisher;
     private UVCPublisher uvcPublisher1;
+    //工程外网搭建的rtmp地址
     private static String RTMP_URL_01 = "rtmp://118.190.36.40/devices/13723789649";//rtmp://118.190.36.40/devices/13723789649
 //    private static String RTMP_URL_01 = "rtmp://192.168.1.100:1935/myapp/camera01";
     private static String RTMP_URL_02 = "";//rtmp://192.168.1.100:1935/myapp/camera02
-
+    //http 设备登录返回的token
     private String token = "";
-
+    //用于通过websocket登录，收到VIDEO_PLAY指令来获取rtmp地址
     private MySocket mMySocket;
-
+    //获取usb挂载的设备，用于收到socket指令来开启UVCCamera
     private List<UsbDevice> mAttachDevice;
 
     @Override
@@ -101,10 +106,10 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
                 BaseResult mBaseResult = new Gson().fromJson(message,
                         new TypeToken<BaseResult>() {}.getType());
                 switch (mBaseResult.getType()){
-                    case Constants.TASK_LOGIN:
+                    case Constants.TASK_LOGIN://socket登录
                         break;
                     case Constants.VIDEO_PLAY:
-//                    case Constants.TASK_CHECK_CALLBACK://TODO 2021-11-10 需要测试rtmp打开这个
+//                    case Constants.TASK_CHECK_CALLBACK://TODO 2021-11-10 需要本地测试rtmp 视频流打开这个，还有socket登录之后，发送拉取任务指令
                         try{
                             VideoPlayResult mVideoPlayResult = new Gson().fromJson(message, new TypeToken<VideoPlayResult>() {}.getType());
                             Log.e("shulan111","mVideoPlayResult--->" + mVideoPlayResult.toString());
@@ -116,7 +121,7 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
                         }
                         requestUSBMonitor();
                         break;
-                    case Constants.VIDEO_PLAY_STOP:
+                    case Constants.VIDEO_PLAY_STOP://
                         if(uvcPublisher != null){
                             uvcPublisher.stopCamera();
                         }
@@ -171,6 +176,9 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
         uvcPublisher.setVideoHDMode();
     }
 
+    /**
+     *  请求UVC Camera连接
+     */
     private void requestUSBMonitor(){
         Log.d("shulan111","+++requestUSBMonitor");
          if(usbMonitor.isRegistered()){
@@ -178,7 +186,7 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
              for (UsbDevice device : mAttachDevice) {
                  Log.d("shulan111",usbMonitor.isRegistered() + " ");
                  String name = device.getConfiguration(0).getName();
-                 if(!TextUtils.isEmpty(name) && !"null".equals(name))
+                 if(!TextUtils.isEmpty(name) && !"null".equals(name))//存在USB设备卷头为空，即无设备的判断
                      usbMonitor.requestPermission(device);
              }
             }
