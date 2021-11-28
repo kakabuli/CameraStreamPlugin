@@ -40,7 +40,10 @@ import com.tencent.mmkv.MMKV;
 import net.ossrs.yasea.SrsEncodeHandler;
 import net.ossrs.yasea.SrsRecordHandler;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.SocketException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -81,8 +84,31 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
         setContentView(R.layout.activity_main);
         initView();
         initData();
+//        try {
+//            copyBigDataToSD("/sdcard/msc/msc.cfg");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
     }
 
+    private void copyBigDataToSD(String strOutFileName) throws IOException
+    {
+        InputStream myInput;
+        OutputStream myOutput = new FileOutputStream(strOutFileName);
+        myInput = this.getAssets().open("msc.cfg");
+        byte[] buffer = new byte[1024];
+        int length = myInput.read(buffer);
+        while(length > 0)
+        {
+            myOutput.write(buffer, 0, length);
+            length = myInput.read(buffer);
+        }
+
+        myOutput.flush();
+        myInput.close();
+        myOutput.close();
+    }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -108,8 +134,8 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
                 switch (mBaseResult.getType()){
                     case Constants.TASK_LOGIN://socket登录
                         break;
-                    case Constants.VIDEO_PLAY:
-//                    case Constants.TASK_CHECK_CALLBACK://TODO 2021-11-10 需要本地测试rtmp 视频流打开这个，还有socket登录之后，发送拉取任务指令
+//                    case Constants.VIDEO_PLAY:
+                    case Constants.TASK_CHECK_CALLBACK://TODO 2021-11-10 需要本地测试rtmp 视频流打开这个，还有socket登录之后，发送拉取任务指令
                         try{
                             VideoPlayResult mVideoPlayResult = new Gson().fromJson(message, new TypeToken<VideoPlayResult>() {}.getType());
                             Log.e("shulan111","mVideoPlayResult--->" + mVideoPlayResult.toString());

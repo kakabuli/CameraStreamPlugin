@@ -13,4 +13,6 @@
     <color name="gray">#22434343</color>
     <color name="green">#06F110</color>
     <color name="red">#F01505</color>
+
+    <color name="c333333">#333333</color>
 </resources>
