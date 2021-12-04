@@ -19,6 +19,7 @@ import com.github.faucamp.simplertmp.RtmpHandler;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.kakabuli.camerastream.socket.result.VideoPlayResult;
+import com.kakabuli.camerastream.utils.DataConversion;
 import com.serenegiant.UVCCameraView;
 import com.serenegiant.UVCPublisher;
 import com.serenegiant.dialog.MessageDialogFragment;
@@ -36,10 +37,16 @@ import com.kakabuli.camerastream.socket.result.BaseResult;
 import com.kakabuli.camerastream.utils.Constants;
 import com.kakabuli.camerastream.utils.MMKVUtils;
 import com.tencent.mmkv.MMKV;
+import com.zdx.serialportlibrary.Device;
+import com.zdx.serialportlibrary.SerialPortFinder;
+import com.zdx.serialportlibrary.SerialPortManager;
+import com.zdx.serialportlibrary.listener.OnOpenSerialPortListener;
+import com.zdx.serialportlibrary.listener.OnSerialPortDataListener;
 
 import net.ossrs.yasea.SrsEncodeHandler;
 import net.ossrs.yasea.SrsRecordHandler;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,6 +85,9 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
     //获取usb挂载的设备，用于收到socket指令来开启UVCCamera
     private List<UsbDevice> mAttachDevice;
 
+    // 打开USB串口
+    private SerialPortManager mUSB0SerialPortManager, mUSB1SerialPortManager, mUSB2SerialPortManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,6 +99,8 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
+
+        initOpenUSBSerialPort();
 
     }
 
@@ -117,6 +129,97 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void initOpenUSBSerialPort() {
+        SerialPortFinder serialPortFinder = new SerialPortFinder();
+
+        ArrayList<Device> devices = serialPortFinder.getDevices();
+
+        mUSB0SerialPortManager = new SerialPortManager();
+        mUSB1SerialPortManager = new SerialPortManager();
+        mUSB2SerialPortManager = new SerialPortManager();
+
+        Device deviceUSB0 = null, deviceUSB1 = null, deviceUSB2 = null;
+        for (Device device : devices) {
+            if (device.getName().equals("ttyUSB0")) {
+                deviceUSB0 = device;
+            } else if (device.getName().equals("ttyUSB1")) {
+                deviceUSB1 = device;
+            } else if (device.getName().equals("ttyUSB2")) {
+                deviceUSB2 = device;
+            }
+        }
+
+        if (deviceUSB0 != null) {
+            boolean openUSB0 = mUSB0SerialPortManager.setOnOpenSerialPortListener(new OnOpenSerialPortListener() {
+                @Override
+                public void onSuccess(File device) {
+
+                }
+
+                @Override
+                public void onFail(File device, Status status) {
+
+                }
+            }).setOnSerialPortDataListener(new OnSerialPortDataListener() {
+                @Override
+                public void onDataReceived(byte[] bytes) {
+                    Log.d("USB", "USB0: " + DataConversion.encodeHexString(bytes));
+                }
+
+                @Override
+                public void onDataSent(byte[] bytes) {
+
+                }
+            }).openSerialPort(deviceUSB0.getFile(), 115200);
+        }
+        if (deviceUSB1 != null) {
+            boolean openUSB1 = mUSB1SerialPortManager.setOnOpenSerialPortListener(new OnOpenSerialPortListener() {
+                @Override
+                public void onSuccess(File device) {
+
+                }
+
+                @Override
+                public void onFail(File device, Status status) {
+
+                }
+            }).setOnSerialPortDataListener(new OnSerialPortDataListener() {
+                @Override
+                public void onDataReceived(byte[] bytes) {
+                    Log.d("USB", "USB1: " + DataConversion.encodeHexString(bytes));
+                }
+
+                @Override
+                public void onDataSent(byte[] bytes) {
+
+                }
+            }).openSerialPort(deviceUSB1.getFile(), 115200);
+        }
+        if (deviceUSB2 != null) {
+            boolean openUSB2 = mUSB2SerialPortManager.setOnOpenSerialPortListener(new OnOpenSerialPortListener() {
+                @Override
+                public void onSuccess(File device) {
+
+                }
+
+                @Override
+                public void onFail(File device, Status status) {
+
+                }
+            }).setOnSerialPortDataListener(new OnSerialPortDataListener() {
+                @Override
+                public void onDataReceived(byte[] bytes) {
+                    Log.d("USB", "USB2: " + DataConversion.encodeHexString(bytes));
+                }
+
+                @Override
+                public void onDataSent(byte[] bytes) {
+
+                }
+            }).openSerialPort(deviceUSB2.getFile(), 115200);
+        }
     }
 
     private void initSocket(String deviceToken) {
@@ -659,6 +762,10 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
 
     @Override
     protected void onDestroy() {
+        if (mUSB0SerialPortManager != null) mUSB0SerialPortManager.closeSerialPort();
+        if (mUSB1SerialPortManager != null) mUSB1SerialPortManager.closeSerialPort();
+        if (mUSB2SerialPortManager != null) mUSB2SerialPortManager.closeSerialPort();
+
         super.onDestroy();
         uvcPublisher.stopPublish();
         uvcPublisher1.stopPublish();

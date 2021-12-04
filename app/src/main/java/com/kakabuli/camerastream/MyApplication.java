@@ -52,6 +52,7 @@ public class MyApplication extends Application {
     }
 
     private void getUserToken() {
+        // TODO: 2021/12/4 登录
         NewServiceImp.login(/*"13723789649","123456"*/"admin","admin").subscribe(new Observer<LoginResult>() {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
