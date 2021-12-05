@@ -53,9 +53,10 @@ public class WorkService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(playName == null){
-            path = MyApplication.PATH;
+            path = MyApplication.getInstance().getPATH();
             playName = intent.getStringExtra("playName");
             Log.d(TAG,"onStartCommand " + playName);
+            Log.d(TAG, "token = " + MyApplication.getInstance().getToken());
             if(!TextUtils.isEmpty(MyApplication.getInstance().getToken())){
                 getVideo();
             }
@@ -89,7 +90,7 @@ public class WorkService extends Service {
 
             @Override
             public void onError(@NonNull Throwable e) {
-                Log.d("shulan_http","getVideo onError");
+                Log.d("shulan_http","getVideo onError: " + e.toString());
             }
 
             @Override
