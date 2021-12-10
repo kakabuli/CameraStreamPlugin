@@ -13,26 +13,13 @@ import com.kakabuli.camerastream.http.NewServiceImp;
 import com.kakabuli.camerastream.http.result.GetVideoDownLoadResult;
 import com.kakabuli.camerastream.http.result.GetVideoResult;
 import com.kakabuli.camerastream.http.result.LoginResult;
-import com.kakabuli.camerastream.utils.Constants;
 import com.kakabuli.camerastream.utils.DownFileUtils;
-import com.kakabuli.camerastream.utils.MMKVUtils;
 
 import org.greenrobot.eventbus.EventBus;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
 
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 public class WorkService extends Service {
 
@@ -53,9 +40,10 @@ public class WorkService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(playName == null){
-            path = MyApplication.PATH;
+            path = MyApplication.getInstance().getPATH();
             playName = intent.getStringExtra("playName");
             Log.d(TAG,"onStartCommand " + playName);
+            Log.d(TAG, "token = " + MyApplication.getInstance().getToken());
             if(!TextUtils.isEmpty(MyApplication.getInstance().getToken())){
                 getVideo();
             }
@@ -89,7 +77,7 @@ public class WorkService extends Service {
 
             @Override
             public void onError(@NonNull Throwable e) {
-                Log.d("shulan_http","getVideo onError");
+                Log.d("shulan_http","getVideo onError: " + e.toString());
             }
 
             @Override

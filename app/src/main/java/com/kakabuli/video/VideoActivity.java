@@ -46,7 +46,7 @@ public class VideoActivity extends Activity {
     }
 
     private void getDownloadVideo(){
-        File file = new File(MyApplication.PATH);
+        File file = new File(MyApplication.getInstance().getPATH());
         Log.d(TAG, "getDownloadVideo: " + file.exists());
         if(file.exists()){
             File[] fileArray = file.listFiles();
@@ -75,7 +75,7 @@ public class VideoActivity extends Activity {
         }else if(downFileBean.getCode() == 100){
             tv.setText("视频加载"+ downFileBean.getMsg() + "%");
         }else if(downFileBean.getCode() == 200 && !TextUtils.isEmpty(downFileBean.getMsg())){
-            File file = new File(MyApplication.getInstance().PATH);
+            File file = new File(MyApplication.getInstance().getPATH());
             if(file.exists()){
                 File[] fileArray = file.listFiles();
                 if(fileArray.length == 1){

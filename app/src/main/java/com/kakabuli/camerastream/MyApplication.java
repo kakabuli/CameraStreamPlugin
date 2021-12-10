@@ -21,7 +21,7 @@ public class MyApplication extends Application {
 
     private String token;
     private static MyApplication instance;
-    public static String PATH ; // 视频存放的路径；
+    private String PATH ; // 视频存放的路径；
 
     @Override
     public void onCreate() {
@@ -52,6 +52,7 @@ public class MyApplication extends Application {
     }
 
     private void getUserToken() {
+        // TODO: 2021/12/4 登录
         NewServiceImp.login(/*"13723789649","123456"*/"admin","admin").subscribe(new Observer<LoginResult>() {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
@@ -81,4 +82,9 @@ public class MyApplication extends Application {
             }
         });
     }
+
+    public String getPATH() {
+        return PATH;
+    }
+
 }

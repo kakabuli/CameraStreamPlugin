@@ -252,7 +252,7 @@ public class UVCCameraStreamService extends Service {
                 while (iterator.hasNext()){
                     UsbDevice next = iterator.next();
                     if(next != null ){
-
+                        // TODO: 2021/11/20 寬高的兩倍除以3
                     }
                 }
             }

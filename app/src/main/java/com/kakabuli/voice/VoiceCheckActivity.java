@@ -14,8 +14,10 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.blankj.utilcode.util.LogUtils;
 import com.kakabuli.camerastream.BuildConfig;
 import com.kakabuli.camerastream.R;
 import com.kakabuli.voice.caePk.CaeOperator;
@@ -56,8 +58,9 @@ public class VoiceCheckActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_voice_check);
+        initUIEvent();
         if (checkPermissions()) {
-            initUIEvent();
+            startCheckTask();
         }
     }
 
@@ -65,18 +68,20 @@ public class VoiceCheckActivity extends Activity {
      * 初始化UI相关
      */
     private List<CheckDeviceBean> checkList = new ArrayList<>();
-    private CheckDeviceAdapter checkDeviceAdapter = new CheckDeviceAdapter(checkList);
+    private CheckDeviceAdapter checkDeviceAdapter;
     private ArrayList<BaseCheckTask> taskList = new ArrayList<>();
 
     private RecyclerView recyclerView;
 
     private void initUIEvent() {
         recyclerView = findViewById(R.id.recycleView);
+        checkDeviceAdapter = new CheckDeviceAdapter(checkList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(checkDeviceAdapter);
 
         TextView headVersion = findViewById(R.id.headVersion);
         headVersion.setText(String.format(getString(R.string.boot_check), ActivityExt.getAppVersionName(this)));
-        startCheckTask();
+
     }
 
     private boolean isCheckSuccess = true;
@@ -116,6 +121,7 @@ public class VoiceCheckActivity extends Activity {
 
             @Override
             public void onCheckStart(CheckDeviceBean checkDeviceBean) {
+                LogUtils.d("checkDeviceBean " + checkDeviceBean.toString());
                 checkList.add(checkDeviceBean);
                 runOnUiThread(() -> checkDeviceAdapter.updateData());
             }
@@ -203,7 +209,7 @@ public class VoiceCheckActivity extends Activity {
             }
         }
         if (checkPermission) {
-            initUIEvent();
+            startCheckTask();
         }
     }
 

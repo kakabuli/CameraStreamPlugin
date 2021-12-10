@@ -1,2 +1,2 @@
-include ':app', ':uvccamera', ':yasea'
+include ':app', ':uvccamera', ':yasea', ':serialportlibrary'
 rootProject.name = "CameraStreamPlugin"

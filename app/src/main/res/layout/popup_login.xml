@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="820dp"
+    android:layout_height="416dp"
+    android:background="@drawable/shape_login_bg">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="授权账号"
+        android:textColor="@color/black"
+        android:textSize="28sp"
+        android:layout_marginTop="40dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="360dp"
+        android:layout_height="60dp"
+        android:text="保存"
+        android:textSize="24sp"
+        android:background="@drawable/shape_save_btn_bg"
+        android:layout_marginBottom="43dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/etAccount"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:ems="10"
+        android:layout_marginTop="28dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginEnd="60dp"
+        android:inputType="text"
+        android:gravity="center"
+        tools:text="xxx@xxx.com"
+        android:textSize="28sp"
+        android:textColor="@color/c333333"
+        android:background="@drawable/shape_input_bg"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+
+    <EditText
+        android:id="@+id/etPwd"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:ems="10"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginEnd="60dp"
+        android:inputType="textPassword"
+        android:gravity="center"
+        tools:text="XXXXXXX"
+        android:textSize="28sp"
+        android:textColor="@color/c333333"
+        android:background="@drawable/shape_input_bg"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etAccount" />
+
+    <TextView
+        android:id="@+id/tvAccount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="账号"
+        android:textColor="@color/c333333"
+        android:textSize="20sp"
+        android:layout_marginStart="46dp"
+        app:layout_constraintBottom_toBottomOf="@+id/etAccount"
+        app:layout_constraintStart_toStartOf="@+id/etAccount"
+        app:layout_constraintTop_toTopOf="@+id/etAccount" />
+
+    <TextView
+        android:id="@+id/tvPwd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="密码"
+        android:textSize="20sp"
+        android:textColor="@color/c333333"
+        android:layout_marginStart="46dp"
+        app:layout_constraintBottom_toBottomOf="@+id/etPwd"
+        app:layout_constraintStart_toStartOf="@+id/etPwd"
+        app:layout_constraintTop_toTopOf="@+id/etPwd" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
