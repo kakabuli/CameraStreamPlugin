@@ -78,12 +78,6 @@
 
         <activity android:name="com.kakabuli.video.VideoActivity"/>
 
-        <activity android:name="com.kakabuli.voice.NlpVoiceActivity"/>
-
-        <activity android:name="com.kakabuli.voice.VoiceCheckActivity"/>
-
-        <service android:name="com.kakabuli.voice.VoiceService"/>
-
         <service android:name="com.kakabuli.service.WorkService"/>
 
         <receiver android:name=".BootBroadcastReceiver"

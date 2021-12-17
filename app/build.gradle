@@ -30,13 +30,8 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            buildConfigField "String", "Platform", '"rk3399"'
-            buildConfigField "String", "MicType", '"4mic"'
         }
-        debug{
-            buildConfigField "String", "Platform", '"rk3399"'
-            buildConfigField "String", "MicType", '"4mic"'
-        }
+
     }
     sourceSets {
         main {
