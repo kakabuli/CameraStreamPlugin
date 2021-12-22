@@ -4,9 +4,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.iflytek.alsa.bothlentrecorder.AlsaRecorder;
-import com.iflytek.alsa.bothlentrecorder.IPcmCallBack;
-import com.iflytek.alsa.bothlentrecorder.ResultType;
+//import com.iflytek.alsa.bothlentrecorder.AlsaRecorder;
+//import com.iflytek.alsa.bothlentrecorder.IPcmCallBack;
+//import com.iflytek.alsa.bothlentrecorder.ResultType;
 import com.kakabuli.camerastream.BuildConfig;
 import com.kakabuli.voice.caePk.util.AudioFormatUtil;
 import com.kakabuli.voice.caePk.util.PcmFileUtil;
@@ -33,7 +33,7 @@ public class CaeOperator {
     }
 
     private final String TAG = CaeOperator.class.getSimpleName();
-    private AlsaRecorder mAlsaRecorder;
+//    private AlsaRecorder mAlsaRecorder;
     private RecordThread recordThread;
     // 唤醒成功后抛出的音频保存路径
     private final String mAsrAudioDir = "/sdcard/cae/CAEAsrAudio/";
@@ -75,7 +75,7 @@ public class CaeOperator {
 
     private void writeToCae(byte[] data) {
         if (mCaeCoreHelper != null) {
-            mCaeCoreHelper.writeAudio(data);
+//            mCaeCoreHelper.writeAudio(data);
 //            Log.e(TAG, "=========== :   " + data.length);
             if (isSaveAudio && mRawFileUtil != null) {
                 mRawFileUtil.write(data, 0, data.length);
@@ -114,7 +114,7 @@ public class CaeOperator {
     public void setRealBeam(int beam) {
         if (null != mCaeCoreHelper) {
             // Log.d(TAG," mcaeCoreHelper.writeAudio(data)");
-            mCaeCoreHelper.setRealBeam(beam);
+//            mCaeCoreHelper.setRealBeam(beam);
         }
     }
 
@@ -126,38 +126,38 @@ public class CaeOperator {
 
     private PcmDeviceBean pcmDeviceBean;
 
-    public CheckResult openAndStartRecord(int card) {
-        //开始创建录音声卡实例
-        if (BuildConfig.MicType.equals("1mic")) {
-            recordThread = RecordThread.getInstance(iRecordListener);
-            recordThread.start();
-            createFile();
-            return new CheckResult(true, "打开成功:");
-        } else {
-            int pcmCard = 0;
-            if (card < 0) {
-                pcmCard = ShellUtils.fetchCards();
-                if (pcmCard < 0) {
-                    boolean b = ShellUtils.haveRoot();
-                    if (b) {
-                        return new CheckResult(false, "没有找到USB声卡");
-                    } else {
-                        return new CheckResult(false, "没有找到USB声卡,没有root权限");
-                    }
-                }
-            } else {
-                pcmCard = card;
-            }
-            pcmDeviceBean = new PcmDeviceBean(pcmCard);
-            Log.e(TAG, "openAndStartRecord:   " + pcmDeviceBean);
-            mAlsaRecorder = AlsaRecorder.createInstance(pcmDeviceBean.getmPcmCard(), pcmDeviceBean.getmPcmDevice(), pcmDeviceBean.getmPcmChannel(),
-                    pcmDeviceBean.getmPcmSampleRate(),
-                    pcmDeviceBean.getmPcmPeriodSize(), pcmDeviceBean.getmPcmPeriodCount(),
-                    pcmDeviceBean.getmPcmFormat(), pcmDeviceBean.getMicCount());
-            mAlsaRecorder.setLogShow(false);
-            return startRecord();
-        }
-    }
+//    public CheckResult openAndStartRecord(int card) {
+//        //开始创建录音声卡实例
+//        if (BuildConfig.MicType.equals("1mic")) {
+//            recordThread = RecordThread.getInstance(iRecordListener);
+//            recordThread.start();
+//            createFile();
+//            return new CheckResult(true, "打开成功:");
+//        } else {
+//            int pcmCard = 0;
+//            if (card < 0) {
+//                pcmCard = ShellUtils.fetchCards();
+//                if (pcmCard < 0) {
+//                    boolean b = ShellUtils.haveRoot();
+//                    if (b) {
+//                        return new CheckResult(false, "没有找到USB声卡");
+//                    } else {
+//                        return new CheckResult(false, "没有找到USB声卡,没有root权限");
+//                    }
+//                }
+//            } else {
+//                pcmCard = card;
+//            }
+//            pcmDeviceBean = new PcmDeviceBean(pcmCard);
+//            Log.e(TAG, "openAndStartRecord:   " + pcmDeviceBean);
+//            mAlsaRecorder = AlsaRecorder.createInstance(pcmDeviceBean.getmPcmCard(), pcmDeviceBean.getmPcmDevice(), pcmDeviceBean.getmPcmChannel(),
+//                    pcmDeviceBean.getmPcmSampleRate(),
+//                    pcmDeviceBean.getmPcmPeriodSize(), pcmDeviceBean.getmPcmPeriodCount(),
+//                    pcmDeviceBean.getmPcmFormat(), pcmDeviceBean.getMicCount());
+//            mAlsaRecorder.setLogShow(false);
+//            return startRecord();
+//        }
+//    }
 
     private final IRecordListener iRecordListener = audioData -> {
         if (isSaveAudio) {
@@ -169,43 +169,43 @@ public class CaeOperator {
 
     private CheckResult checkResult;
 
-    private CheckResult startRecord() {
-        checkResult = new CheckResult(true, "打开成功:" + pcmDeviceBean);
-        if (mAlsaRecorder != null) {
-            mAlsaRecorder.startRecording(new IPcmCallBack() {
-                @Override
-                public void onPcmData(byte[] bytes, int i) {
-                    //Log.e(TAG, "onPcmData: "+bytes.length );
-                    onPcmDataHandler(bytes);
-                }
-
-                @Override
-                public void onState(ResultType resultType) {
-                    Log.e(TAG, "onState: " + resultType);
-                    switch (resultType) {
-                        case OPEN_ERROR:
-                            Log.i(TAG, "start recording fail..." + pcmDeviceBean);
-                            checkResult = new CheckResult(false, String.format(Locale.getDefault(), "打开失败,错误码为[ %d ]", -1));
-                            break;
-                        case OPEN_SUCCESS:
-                            createFile();
-                            break;
-                        case READ_DEVICE_ERROR:
-                            mAlsaRecorder.stopRecording();
-                            handler.removeCallbacksAndMessages(null);
-                            handler.postDelayed(() -> {
-                                startRecord();
-                            }, 200);
-                            break;
-                    }
-                }
-            });
-        } else {
-            Log.d(TAG, "AlsaRecorder is null ..  .");
-            checkResult = new CheckResult(false, "打开失败 null");
-        }
-        return checkResult;
-    }
+//    private CheckResult startRecord() {
+//        checkResult = new CheckResult(true, "打开成功:" + pcmDeviceBean);
+//        if (mAlsaRecorder != null) {
+//            mAlsaRecorder.startRecording(new IPcmCallBack() {
+//                @Override
+//                public void onPcmData(byte[] bytes, int i) {
+//                    //Log.e(TAG, "onPcmData: "+bytes.length );
+//                    onPcmDataHandler(bytes);
+//                }
+//
+//                @Override
+//                public void onState(ResultType resultType) {
+//                    Log.e(TAG, "onState: " + resultType);
+//                    switch (resultType) {
+//                        case OPEN_ERROR:
+//                            Log.i(TAG, "start recording fail..." + pcmDeviceBean);
+//                            checkResult = new CheckResult(false, String.format(Locale.getDefault(), "打开失败,错误码为[ %d ]", -1));
+//                            break;
+//                        case OPEN_SUCCESS:
+//                            createFile();
+//                            break;
+//                        case READ_DEVICE_ERROR:
+//                            mAlsaRecorder.stopRecording();
+//                            handler.removeCallbacksAndMessages(null);
+//                            handler.postDelayed(() -> {
+//                                startRecord();
+//                            }, 200);
+//                            break;
+//                    }
+//                }
+//            });
+//        } else {
+//            Log.d(TAG, "AlsaRecorder is null ..  .");
+//            checkResult = new CheckResult(false, "打开失败 null");
+//        }
+//        return checkResult;
+//    }
 
     private void createFile() {
         mAsrFileUtil = new PcmFileUtil(mAsrAudioDir);
@@ -219,9 +219,9 @@ public class CaeOperator {
     }
 
     public void stopRecord() {
-        if (mAlsaRecorder != null) {
-            mAlsaRecorder.stopRecording();
-        }
+//        if (mAlsaRecorder != null) {
+//            mAlsaRecorder.stopRecording();
+//        }
         if (isSaveAudio) {
             mAsrFileUtil.closeWriteFile();
             mRawFileUtil.closeWriteFile();
@@ -232,7 +232,7 @@ public class CaeOperator {
 
     public void restCaeEngine() {
         if (null != mCaeCoreHelper) {
-            mCaeCoreHelper.resetEngine();
+//            mCaeCoreHelper.resetEngine();
         }
     }
 
@@ -242,11 +242,11 @@ public class CaeOperator {
             mRawFileUtil.closeWriteFile();
             mPcmFileUtil.closeWriteFile();
         }
-        if (mAlsaRecorder != null) {
-            mAlsaRecorder.stopRecording();
-        }
+//        if (mAlsaRecorder != null) {
+//            mAlsaRecorder.stopRecording();
+//        }
         if (mCaeCoreHelper != null) {
-            mCaeCoreHelper.resetEngine();
+//            mCaeCoreHelper.resetEngine();
             mCaeCoreHelper = null;
         }
         if (recordThread != null) {

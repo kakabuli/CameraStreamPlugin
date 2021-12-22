@@ -8,9 +8,9 @@ import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.iflytek.aiui.AIUIAgent;
-import com.iflytek.aiui.AIUIConstant;
-import com.iflytek.aiui.AIUIMessage;
+//import com.iflytek.aiui.AIUIAgent;
+//import com.iflytek.aiui.AIUIConstant;
+//import com.iflytek.aiui.AIUIMessage;
 import com.kakabuli.voice.caePk.CaeOperator;
 import com.kakabuli.voice.caePk.adapter.ChatAdapter;
 import com.kakabuli.voice.caePk.bean.ChatBean;
@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 
 public abstract class BaseVoiceActivity extends Activity {
     private final String TAG = "BaseActivity";
-    private AIUIAgent mAIUIAgent = null;
+//    private AIUIAgent mAIUIAgent = null;
     private boolean isAsring = true;
 
     // 多麦克算法库
@@ -78,12 +78,12 @@ public abstract class BaseVoiceActivity extends Activity {
         if (caeOperator != null) {
             caeOperator.setRealBeam(0);
         }
-        AIUIMessage resetWakeupMsg = new AIUIMessage(
-                AIUIConstant.CMD_WAKEUP, 0, 0, "", null
-        );
-        if (mAIUIAgent != null) {
-            mAIUIAgent.sendMessage(resetWakeupMsg);
-        }
+//        AIUIMessage resetWakeupMsg = new AIUIMessage(
+//                AIUIConstant.CMD_WAKEUP, 0, 0, "", null
+//        );
+//        if (mAIUIAgent != null) {
+//            mAIUIAgent.sendMessage(resetWakeupMsg);
+//        }
         isAsring = true;
     }
 
@@ -94,12 +94,12 @@ public abstract class BaseVoiceActivity extends Activity {
         if (caeOperator != null) {
             caeOperator.setRealBeam(-1);
         }
-        AIUIMessage resetWakeupMsg = new AIUIMessage(
-                AIUIConstant.CMD_RESET_WAKEUP, 0, 0, "", null
-        );
-        if (mAIUIAgent != null) {
-            mAIUIAgent.sendMessage(resetWakeupMsg);
-        }
+//        AIUIMessage resetWakeupMsg = new AIUIMessage(
+//                AIUIConstant.CMD_RESET_WAKEUP, 0, 0, "", null
+//        );
+//        if (mAIUIAgent != null) {
+//            mAIUIAgent.sendMessage(resetWakeupMsg);
+//        }
         isAsring = false;
     }
 
@@ -111,12 +111,12 @@ public abstract class BaseVoiceActivity extends Activity {
         params.append(",pitch=50");//合成音调
         params.append(",volume=50");//合成音量
 
-        Executors.newCachedThreadPool().execute(() -> {
-            AIUIMessage startTts =
-                    new AIUIMessage(AIUIConstant.CMD_TTS, AIUIConstant.START, 0, params.toString(), ttsData);
-            if (mAIUIAgent != null) {
-                mAIUIAgent.sendMessage(startTts);
-            }
-        });
+//        Executors.newCachedThreadPool().execute(() -> {
+//            AIUIMessage startTts =
+//                    new AIUIMessage(AIUIConstant.CMD_TTS, AIUIConstant.START, 0, params.toString(), ttsData);
+//            if (mAIUIAgent != null) {
+//                mAIUIAgent.sendMessage(startTts);
+//            }
+//        });
     }
 }

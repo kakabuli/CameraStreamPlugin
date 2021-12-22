@@ -45,28 +45,28 @@ public class PcmDeviceBean {
 
     public PcmDeviceBean(int card) {
         mPcmCard = card;
-        switch (BuildConfig.MicType) {
-            case "2mic":
-                micType = MicType.DulMic;
-                mPcmChannel = 4;
-                micCount =2 ;
-                break;
-            case "4mic":
-                micType = MicType.FMic;
-              /*  if (BuildConfig.Platform.equals("Rk3326")) {
-                    mPcmChannel = 6;
-                } else {
-                    mPcmChannel = 8;
-                }*/
-                mPcmChannel = 8;
-                micCount =4;
-                break;
-            case "6mic":
-                micType = MicType.SMic;
-                mPcmChannel = 8;
-                micCount =6 ;
-                break;
-        }
+//        switch (BuildConfig.MicType) {
+//            case "2mic":
+//                micType = MicType.DulMic;
+//                mPcmChannel = 4;
+//                micCount =2 ;
+//                break;
+//            case "4mic":
+//                micType = MicType.FMic;
+//              /*  if (BuildConfig.Platform.equals("Rk3326")) {
+//                    mPcmChannel = 6;
+//                } else {
+//                    mPcmChannel = 8;
+//                }*/
+//                mPcmChannel = 8;
+//                micCount =4;
+//                break;
+//            case "6mic":
+//                micType = MicType.SMic;
+//                mPcmChannel = 8;
+//                micCount =6 ;
+//                break;
+//        }
     /*    if (BuildConfig.Platform.equals("Rk3326")) {
             mPcmDevice = 1;
         }*/

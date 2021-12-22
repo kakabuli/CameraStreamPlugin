@@ -35,52 +35,52 @@ public class IflytekMusicProService extends BaseService<JsonArray> {
 
     @Override
     public String handlerNlp(JsonArray data, String answer, JsonArray resultArray) {
-        List<SemanticNormal> semanticList = gson.fromJson(data.toString(), new TypeToken<List<SemanticNormal>>() {
-        }.getType());
-        boolean isFirst = KwHandler.initKw(MyApplication.getInstance());
-        SemanticNormal semantic = semanticList.get(0);
-        String intent = semantic.getIntent();
-        switch (IntentType.IflytekMusicPro.valueOf(intent)) {
-            case PLAY:
-                playMusic(semantic.getSlots());
-                break;
-            case ADVICE:
-                break;
-            case INSTRUCTION:
-                instructionMusic(semantic.getSlots());
-                break;
-            case RANDOM_SEARCH:
-                KwHandler.playOneMusic();
-                break;
-        }
-        handler.removeCallbacksAndMessages(null);
-        if (!isFirst) {
-            handler.postDelayed(() -> SystemHelper.setTopApp(MyApplication.getInstance()), 8000);
-        } else {
-            handler.postDelayed(() -> SystemHelper.setTopApp(MyApplication.getInstance()), 20000);
-        }
+//        List<SemanticNormal> semanticList = gson.fromJson(data.toString(), new TypeToken<List<SemanticNormal>>() {
+//        }.getType());
+//        boolean isFirst = KwHandler.initKw(MyApplication.getInstance());
+//        SemanticNormal semantic = semanticList.get(0);
+//        String intent = semantic.getIntent();
+//        switch (IntentType.IflytekMusicPro.valueOf(intent)) {
+//            case PLAY:
+//                playMusic(semantic.getSlots());
+//                break;
+//            case ADVICE:
+//                break;
+//            case INSTRUCTION:
+//                instructionMusic(semantic.getSlots());
+//                break;
+//            case RANDOM_SEARCH:
+//                KwHandler.playOneMusic();
+//                break;
+//        }
+//        handler.removeCallbacksAndMessages(null);
+//        if (!isFirst) {
+//            handler.postDelayed(() -> SystemHelper.setTopApp(MyApplication.getInstance()), 8000);
+//        } else {
+//            handler.postDelayed(() -> SystemHelper.setTopApp(MyApplication.getInstance()), 20000);
+//        }
         return "好的";
     }
 
     private void instructionMusic(List<SemanticNormal.Slots> slots) {
-        String insType = slots.get(0).getValue();
-        Log.e(TAG, "instructionMusic: " + insType);
-        if (InsType.IflytekMusicPro.close.name().equals(insType) ||
-                InsType.IflytekMusicPro.pause.name().equals(insType)) {
-            KwHandler.kwPlayCtrl(KwPlayAction.STATE_PAUSE);
-        } else if (InsType.IflytekMusicPro.play.name().equals(insType)) {
-            KwHandler.kwPlayCtrl(KwPlayAction.STATE_PLAY);
-
-        } else if (InsType.IflytekMusicPro.next.name().equals(insType) ||
-                InsType.IflytekMusicPro.past.name().equals(insType)) {
-            mKuInfo.clean();
-            this.mKuInfo.artist = artistList[(int) (Math.random() * artistList.length)];
-            KwHandler.searchPlayInApp(mKuInfo);
-        } else if (InsType.IflytekMusicPro.random.name().equals(insType)) {
-            mKuInfo.clean();
-            this.mKuInfo.artist = artistList[(int) (Math.random() * artistList.length)];
-            KwHandler.searchPlayInApp(mKuInfo);
-        }
+//        String insType = slots.get(0).getValue();
+//        Log.e(TAG, "instructionMusic: " + insType);
+//        if (InsType.IflytekMusicPro.close.name().equals(insType) ||
+//                InsType.IflytekMusicPro.pause.name().equals(insType)) {
+//            KwHandler.kwPlayCtrl(KwPlayAction.STATE_PAUSE);
+//        } else if (InsType.IflytekMusicPro.play.name().equals(insType)) {
+//            KwHandler.kwPlayCtrl(KwPlayAction.STATE_PLAY);
+//
+//        } else if (InsType.IflytekMusicPro.next.name().equals(insType) ||
+//                InsType.IflytekMusicPro.past.name().equals(insType)) {
+//            mKuInfo.clean();
+//            this.mKuInfo.artist = artistList[(int) (Math.random() * artistList.length)];
+//            KwHandler.searchPlayInApp(mKuInfo);
+//        } else if (InsType.IflytekMusicPro.random.name().equals(insType)) {
+//            mKuInfo.clean();
+//            this.mKuInfo.artist = artistList[(int) (Math.random() * artistList.length)];
+//            KwHandler.searchPlayInApp(mKuInfo);
+//        }
     }
 
     private KwInfo mKuInfo = new KwInfo();
@@ -108,12 +108,12 @@ public class IflytekMusicProService extends BaseService<JsonArray> {
             }
         }
         Log.d(TAG, "playMusic: " + mKuInfo);
-        KwHandler.searchPlayInApp(mKuInfo);
+//        KwHandler.searchPlayInApp(mKuInfo);
     }
 
     @Override
     public void handlerWake() {
-        KwHandler.kwPlayCtrl(KwPlayAction.STATE_PAUSE);
+//        KwHandler.kwPlayCtrl(KwPlayAction.STATE_PAUSE);
         SystemHelper.setTopApp(MyApplication.getInstance());
     }
 }

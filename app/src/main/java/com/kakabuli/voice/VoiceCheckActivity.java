@@ -7,6 +7,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 import android.widget.ProgressBar;
@@ -87,7 +89,7 @@ public class VoiceCheckActivity extends Activity {
     private boolean isCheckSuccess = true;
 
     private void startCheckTask() {
-        addCheckTask();
+//        addCheckTask();
         TaskCheckMgr.getInstance().startCheckTask(new ICheckTaskCallBack() {
             @Override
             public void onAllTaskCheckEnd() {
@@ -140,23 +142,23 @@ public class VoiceCheckActivity extends Activity {
     private NetCheck netCheck = new NetCheck();
     private CaeAuthCheck caeAuthCheck = new CaeAuthCheck();
 
-    private void addCheckTask() {
-        isHaveRoot = ShellUtils.haveRoot();
-        if (!BuildConfig.MicType.equals("1mic")) {
-            taskList.add(cardNumberCheck);
-            taskList.add(cardPermissionCheck);
-        }
-//            add(systemTimeCheck)
-        taskList.add(netCheck);
-        taskList.add(new PlatformMicCheck());
-        taskList.add(caeAuthCheck);
-        if (BuildConfig.MicType.equals("1mic")) {
-            taskList.add(new CardOpenCheck());
-        } else {
-            taskList.add(new CardOpenCheck());
-        }
-        TaskCheckMgr.getInstance().addTask(taskList);
-    }
+//    private void addCheckTask() {
+//        isHaveRoot = ShellUtils.haveRoot();
+//        if (!BuildConfig.MicType.equals("1mic")) {
+//            taskList.add(cardNumberCheck);
+//            taskList.add(cardPermissionCheck);
+//        }
+////            add(systemTimeCheck)
+//        taskList.add(netCheck);
+//        taskList.add(new PlatformMicCheck());
+//        taskList.add(caeAuthCheck);
+//        if (BuildConfig.MicType.equals("1mic")) {
+//            taskList.add(new CardOpenCheck());
+//        } else {
+//            taskList.add(new CardOpenCheck());
+//        }
+//        TaskCheckMgr.getInstance().addTask(taskList);
+//    }
 
     private void startProgress() {
         ProgressBar initProgress = findViewById(R.id.initProgress);

@@ -9,11 +9,11 @@ import com.kakabuli.voice.caePk.checkTask.base.CheckType;
 public class PlatformMicCheck extends BaseCheckTask {
     @Override
     public void checkHandler() {
-        checkDeviceBean.checkResult = String.format(
-                MyApplication.getInstance().getString(R.string.platform_mic),
-                BuildConfig.Platform,
-                BuildConfig.MicType
-        );
+//        checkDeviceBean.checkResult = String.format(
+//                MyApplication.getInstance().getString(R.string.platform_mic),
+//                BuildConfig.Platform,
+//                BuildConfig.MicType
+//        );
         checkDeviceBean.checkResultStatus = 1;
     }
 

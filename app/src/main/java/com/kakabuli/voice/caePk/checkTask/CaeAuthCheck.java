@@ -11,17 +11,17 @@ import com.kakabuli.voice.osCaeHelper.CheckResult;
 public class CaeAuthCheck extends BaseCheckTask {
     @Override
     public void checkHandler() {
-        CheckResult caeEngineInit = CaeCoreHelper.getCaeOperateHelp().caeEngineInit();
-        if (!caeEngineInit.state) {
-            caeEngineInit = CaeCoreHelper.getCaeOperateHelp().caeEngineInit();
-        }
-
-        if (caeEngineInit.state) {
-            checkDeviceBean.checkResultStatus = 1;
-        } else {
-            checkDeviceBean.checkResultStatus = 0;
-
-        }
+//        CheckResult caeEngineInit = CaeCoreHelper.getCaeOperateHelp().caeEngineInit();
+//        if (!caeEngineInit.state) {
+//            caeEngineInit = CaeCoreHelper.getCaeOperateHelp().caeEngineInit();
+//        }
+//
+//        if (caeEngineInit.state) {
+//            checkDeviceBean.checkResultStatus = 1;
+//        } else {
+//            checkDeviceBean.checkResultStatus = 0;
+//
+//        }
         StringBuilder builder = new StringBuilder();
 
      /*   File(CaeCoreHelper.mIniHlwPath).readLines(Charset.forName("utf-8")).filter {
@@ -39,7 +39,7 @@ public class CaeAuthCheck extends BaseCheckTask {
         }.forEach {
             builder.append(it)
         }*/
-        checkDeviceBean.checkResult = caeEngineInit.msg;
+//        checkDeviceBean.checkResult = caeEngineInit.msg;
     }
 
     @Override

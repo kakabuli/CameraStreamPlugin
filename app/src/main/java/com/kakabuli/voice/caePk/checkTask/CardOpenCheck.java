@@ -12,13 +12,13 @@ public class CardOpenCheck extends BaseCheckTask {
 
     @Override
     public void checkHandler() {
-        CheckResult openAndStartRecord = CaeOperator.getInstance().openAndStartRecord(-1);
-        if (openAndStartRecord.state) {
-            checkDeviceBean.checkResultStatus = 1;
-        } else {
-            checkDeviceBean.checkResultStatus = 0;
-        }
-        checkDeviceBean.checkResult = openAndStartRecord.msg;
+//        CheckResult openAndStartRecord = CaeOperator.getInstance().openAndStartRecord(-1);
+//        if (openAndStartRecord.state) {
+//            checkDeviceBean.checkResultStatus = 1;
+//        } else {
+//            checkDeviceBean.checkResultStatus = 0;
+//        }
+//        checkDeviceBean.checkResult = openAndStartRecord.msg;
     }
 
     @Override
