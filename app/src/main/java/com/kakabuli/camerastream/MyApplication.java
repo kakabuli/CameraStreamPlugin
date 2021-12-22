@@ -4,6 +4,7 @@ import android.app.Application;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.blankj.utilcode.util.LogUtils;
 import com.kakabuli.camerastream.http.NewServiceImp;
 import com.kakabuli.camerastream.http.result.LoginResult;
 import com.kakabuli.camerastream.utils.Constants;
@@ -25,7 +26,6 @@ public class MyApplication extends Application {
 
     @Override
     public void onCreate() {
-
         super.onCreate();
         instance = this;
         PATH = getExternalFilesDir("").getAbsolutePath() + File.separator + "downloadVideo";
@@ -33,6 +33,7 @@ public class MyApplication extends Application {
         initMMKV(this);
         // TODO: 2021/11/9 要确保拿到TOKEN,不然无法下载视频跟推流 
         getUserToken();
+        LogUtils.getConfig().setBorderSwitch(false);
     }
 
     private void initMMKV(MyApplication myApplication) {

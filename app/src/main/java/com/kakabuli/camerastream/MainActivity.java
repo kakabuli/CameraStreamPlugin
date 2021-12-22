@@ -3,7 +3,6 @@ package com.kakabuli.camerastream;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
@@ -20,6 +19,7 @@ import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.VideoView;
 
+import com.alibaba.fastjson.JSON;
 import com.blankj.utilcode.util.LogUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.github.faucamp.simplertmp.RtmpHandler;
@@ -27,7 +27,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.iflytek.aiui.AIUIAgent;
 import com.iflytek.aiui.AIUIConstant;
-import com.iflytek.aiui.AIUIEvent;
 import com.iflytek.aiui.AIUIListener;
 import com.iflytek.aiui.AIUIMessage;
 import com.iflytek.aiui.AIUISetting;
@@ -36,7 +35,11 @@ import com.kakabuli.camerastream.socket.result.VideoPlayResult;
 import com.kakabuli.camerastream.utils.DataConversion;
 import com.kakabuli.camerastream.utils.DeviceUtils;
 import com.kakabuli.camerastream.utils.FucUtil;
-import com.kakabuli.service.WorkService;
+import com.kakabuli.voice.aiui.AiuiServiceManager;
+import com.kakabuli.voice.caePk.CaeOperator;
+import com.kakabuli.voice.caePk.OnCaeOperatorListener;
+import com.kakabuli.voice.caePk.bean.IatBean;
+import com.kakabuli.voice.caePk.bean.ItemChatType;
 import com.serenegiant.UVCCameraView;
 import com.serenegiant.UVCPublisher;
 import com.serenegiant.dialog.MessageDialogFragment;
@@ -73,12 +76,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -129,7 +132,6 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
         initOpenUSBSerialPort();
         initVideo();
         createAgent();
-
     }
 
     @Override
@@ -1042,167 +1044,159 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
 
     final private String SpeechTAG = "讯飞";
 
-    private int mAIUIState;
+    private int mAIUIState = AIUIConstant.STATE_IDLE;
     private boolean mIsWakeupEnable = false;
+    private boolean isAsring = true;
+    private boolean playTTSByApp = true;
+
+    // 多麦克算法库
+    private CaeOperator caeOperator = null;
+
+    private StringBuilder stringBuilder = new StringBuilder();
 
     private AIUIAgent mAIUIAgent;
 
-    AIUIListener mAIUIListener = new AIUIListener() {
+    private int mAngle = 0;
+    private int mBeam = 0;
 
-        @Override
-        public void onEvent(AIUIEvent event) {
-            LogUtils.iTag( SpeechTAG,  "on event: " + event.eventType );
-            switch (event.eventType) {
-                //休眠事件
-                case AIUIConstant.EVENT_SLEEP: {
-                    break;
-                }
-                case AIUIConstant.EVENT_CONNECTED_TO_SERVER:
-                    LogUtils.dTag(SpeechTAG,"已连接服务器");
-                    break;
 
-                case AIUIConstant.EVENT_SERVER_DISCONNECTED:
-                    LogUtils.dTag(SpeechTAG,"与服务器断连");
-                    break;
+    final private AIUIListener mAIUIListener = event -> {
+//            LogUtils.iTag( SpeechTAG,  "on event: " + event.eventType );
+        switch (event.eventType) {
+            //休眠事件
+            case AIUIConstant.EVENT_SLEEP: {
+                isAsring = false;
+                LogUtils.dTag(SpeechTAG, "进入休眠");
+                updateChatShow(ItemChatType.Robot, "进入休眠");
+                break;
+            }
+            case AIUIConstant.EVENT_CONNECTED_TO_SERVER:
+                LogUtils.dTag(SpeechTAG,"已连接服务器");
+                initCaeEngine();
+                startWakeUp();
+                break;
 
-                case AIUIConstant.EVENT_WAKEUP:
-                    LogUtils.dTag(SpeechTAG,"进入识别状态" );
-                    break;
+            case AIUIConstant.EVENT_SERVER_DISCONNECTED:
+                LogUtils.dTag(SpeechTAG,"与服务器断连");
+                break;
 
-                case AIUIConstant.EVENT_RESULT: {
-                    try {
-                        JSONObject bizParamJson = new JSONObject(event.info);
-                        JSONObject data = bizParamJson.getJSONArray("data").getJSONObject(0);
-                        JSONObject params = data.getJSONObject("params");
-                        JSONObject content = data.getJSONArray("content").getJSONObject(0);
-                        String sub = params.optString("sub");
+            case AIUIConstant.EVENT_WAKEUP:
+                LogUtils.dTag(SpeechTAG,"进入识别状态" );
+                // TODO: 2021/12/22 识别开始，并添加语音播放
+//                playTts(getString(R.string.wake_success_tip));
+//                updateChatShow(ItemChatType.Robot,getString(R.string.wake_success_tip));
+                break;
 
-                        if (content.has("cnt_id") && !"tts".equals(sub)) {
-                            String cnt_id = content.getString("cnt_id");
-                            String cntStr = new String(event.data.getByteArray(cnt_id), "utf-8");
+            case AIUIConstant.EVENT_RESULT: {
+                try {
+                    JSONObject bizParamJson = new JSONObject(event.info);
+                    JSONObject data = bizParamJson.getJSONArray("data").getJSONObject(0);
+                    JSONObject params = data.getJSONObject("params");
+                    JSONObject content = data.getJSONArray("content").getJSONObject(0);
+                    if (content.has("cnt_id")) {
+                        String cntId = content.getString("cnt_id");
+                        String cntStr = new String(event.data.getByteArray(cntId), StandardCharsets.UTF_8);
 
-                            // 获取该路会话的id，将其提供给支持人员，有助于问题排查
-                            // 也可以从Json结果中看到
-                            String sid = event.data.getString("sid");
-                            String tag = event.data.getString("tag");
-
-                            LogUtils.dTag(SpeechTAG, "tag=" + tag);
-
-                            // 获取从数据发送完到获取结果的耗时，单位：ms
-                            // 也可以通过键名"bos_rslt"获取从开始发送数据到获取结果的耗时
-                            long eosRsltTime = event.data.getLong("eos_rslt", -1);
-//                            mTimeSpentText.setText(eosRsltTime + "ms");
-
-                            if (TextUtils.isEmpty(cntStr)) {
-                                return;
-                            }
-
-                            JSONObject cntJson = new JSONObject(cntStr);
-
-//                            if (mNlpText.getLineCount() > 1000) {
-//                                mNlpText.setText("");
-//                            }
-
-//                            mNlpText.append( "\n" );
-//                            mNlpText.append(cntJson.toString());
-//                            mNlpText.setSelection(mNlpText.getText().length());
-
-                            if ("nlp".equals(sub)) {
-                                // 解析得到语义结果
-                                String resultStr = cntJson.optString("intent");
-                                LogUtils.iTag(SpeechTAG, resultStr);
-                            }
-//                            mNlpText.append( "\n" );
+                        if (TextUtils.isEmpty(cntStr)) {
+                            LogUtils.dTag(SpeechTAG, "onEvent: cntStr is null");
+                            return;
                         }
-                    } catch (Throwable e) {
-                        e.printStackTrace();
+                        JSONObject cntJson = new JSONObject(cntStr);
+                        String sub = params.optString("sub");
+                        String result = cntJson.optString("intent");
+                        if ("nlp".equals(sub)) {
+                            // 解析得到语义结果
+                            LogUtils.eTag(SpeechTAG, "nlp : " + result);
+                            if (!"{}".equals(result)) {
+                                String parseResult =
+                                        AiuiServiceManager.getInstance()
+                                                .parseResult(result);
+                                if (!parseResult.equals("")) {
+                                    updateChatShow(ItemChatType.Robot, parseResult);
+                                    if (playTTSByApp) {
+                                        playTts(parseResult);
+                                    }
+                                }
+                            }
+
+                        } else if ("iat".equals(sub)) {
+                            LogUtils.eTag(SpeechTAG, "iat : " + cntStr);
+                            IatBean iatBean = JSON.parseObject(cntStr, IatBean.class);
+                            List<IatBean.TextBean.WsBean> wsBeanList = iatBean.getText().getWs();
+                            StringBuilder stringBuilderTemp = new StringBuilder();
+                            for (IatBean.TextBean.WsBean wsBean : wsBeanList) {
+                                IatBean.TextBean.WsBean.CwBean cwBean = wsBean.getCw().get(0);
+                                stringBuilderTemp.append(cwBean.getW());
+                            }
+
+                            if (stringBuilderTemp.length() > 0) {
+                                stringBuilder.delete(0, stringBuilder.length());
+                                stringBuilder.append(stringBuilderTemp);
+                            }
+                            if (iatBean.getText().isLs()) {
+                                String toString = stringBuilder.toString();
+                                if (!TextUtils.isEmpty(toString) && !toString.trim().equals(".")) {
+                                    updateChatShow(
+                                            ItemChatType.People,
+                                            stringBuilder.toString()
+                                    );
+                                }
+                                stringBuilder.delete(0, stringBuilder.length());
+                            }
+                        }
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
 //                        mNlpText.append( "\n" );
 //                        mNlpText.append( e.getLocalizedMessage());
-                    }
+                }
 
-                } break;
+            } break;
 
-                case AIUIConstant.EVENT_ERROR: {
-//                    mNlpText.append( "\n" );
-//                    mNlpText.append( "错误: " + event.arg1+"\n" + event.info );
-                } break;
+            case AIUIConstant.EVENT_ERROR: {
+                LogUtils.eTag(SpeechTAG, "错误：" + event.arg1 + "\n" + event.info);
+            } break;
 
-                case AIUIConstant.EVENT_VAD: {
-                    if (AIUIConstant.VAD_BOS == event.arg1) {
-                        LogUtils.dTag(SpeechTAG, "找到vad_bos");
-                    } else if (AIUIConstant.VAD_EOS == event.arg1) {
-                        LogUtils.dTag(SpeechTAG, "找到vad_eos");
-                    } else {
-                        LogUtils.dTag(SpeechTAG, "" + event.arg2);
-                    }
-                } break;
+            case AIUIConstant.EVENT_VAD: {
+                if (AIUIConstant.VAD_BOS == event.arg1) {
+                    LogUtils.dTag(SpeechTAG, "找到vad_bos");
+                } else if (AIUIConstant.VAD_EOS == event.arg1) {
+                    LogUtils.dTag(SpeechTAG, "找到vad_eos");
+                } else {
+//                        LogUtils.dTag(SpeechTAG, "" + event.arg2);
+                }
+            } break;
 
-                case AIUIConstant.EVENT_START_RECORD: {
-                    LogUtils.dTag(SpeechTAG, "已开始录音");
-                } break;
+            case AIUIConstant.EVENT_START_RECORD: {
+                LogUtils.dTag(SpeechTAG, "已开始录音");
+            } break;
 
-                case AIUIConstant.EVENT_STOP_RECORD: {
-                    LogUtils.dTag(SpeechTAG, "已停止录音");
-                } break;
+            case AIUIConstant.EVENT_STOP_RECORD: {
+                LogUtils.dTag(SpeechTAG, "已停止录音");
+            } break;
 
-                case AIUIConstant.EVENT_STATE: {	// 状态事件
-                    mAIUIState = event.arg1;
+            case AIUIConstant.EVENT_STATE: {	// 状态事件
+                mAIUIState = event.arg1;
 
-                    if (AIUIConstant.STATE_IDLE == mAIUIState) {
-                        // 闲置状态，AIUI未开启
-                        LogUtils.dTag(SpeechTAG, "STATE_IDLE");
-                    } else if (AIUIConstant.STATE_READY == mAIUIState) {
-                        // AIUI已就绪，等待唤醒
-                        LogUtils.dTag(SpeechTAG, "STATE_READY");
-                    } else if (AIUIConstant.STATE_WORKING == mAIUIState) {
-                        // AIUI工作中，可进行交互
-                        LogUtils.dTag(SpeechTAG, "STATE_WORKING");
-                    }
-                } break;
+                if (AIUIConstant.STATE_IDLE == mAIUIState) {
+                    // 闲置状态，AIUI未开启
+                    LogUtils.dTag(SpeechTAG, "STATE_IDLE");
+                } else if (AIUIConstant.STATE_READY == mAIUIState) {
+                    // AIUI已就绪，等待唤醒
+                    LogUtils.dTag(SpeechTAG, "STATE_READY");
+                } else if (AIUIConstant.STATE_WORKING == mAIUIState) {
+                    // AIUI工作中，可进行交互
+                    LogUtils.dTag(SpeechTAG, "STATE_WORKING");
+                } else {
+                    LogUtils.dTag(SpeechTAG, "STATE_IDLE = " + mAIUIState);
+                }
+            } break;
 
-                case AIUIConstant.EVENT_CMD_RETURN: {
-                    if (AIUIConstant.CMD_SYNC == event.arg1) {	// 数据同步的返回
-                        int dtype = event.data.getInt("sync_dtype", -1);
-                        int retCode = event.arg2;
-
-                        switch (dtype) {
-                            case AIUIConstant.SYNC_DATA_SCHEMA: {
-                                if (AIUIConstant.SUCCESS == retCode) {
-                                    // 上传成功，记录上传会话的sid，以用于查询数据打包状态
-                                    // 注：上传成功并不表示数据打包成功，打包成功与否应以同步状态查询结果为准，数据只有打包成功后才能正常使用
-//                                    mSyncSid = event.data.getString("sid");
-
-                                    // 获取上传调用时设置的自定义tag
-                                    String tag = event.data.getString("tag");
-
-                                    // 获取上传调用耗时，单位：ms
-                                    long timeSpent = event.data.getLong("time_spent", -1);
-//                                    if (-1 != timeSpent) {
-//                                        mTimeSpentText.setText(timeSpent + "ms");
-//                                    }
-
-//                                    LogUtils.dTag(SpeechTAG, "上传成功，sid=" + mSyncSid + "，tag=" + tag + "，你可以试着说“打电话给刘德华”");
-                                } else {
-//                                    mSyncSid = "";
-                                    LogUtils.dTag(SpeechTAG, "上传失败，错误码：" + retCode);
-                                }
-                            } break;
-                        }
-                    } else if (AIUIConstant.CMD_QUERY_SYNC_STATUS == event.arg1) {	// 数据同步状态查询的返回
-                        // 获取同步类型
-                        int syncType = event.data.getInt("sync_dtype", -1);
-                        if (AIUIConstant.SYNC_DATA_QUERY == syncType) {
-                            // 若是同步数据查询，则获取查询结果，结果中error字段为0则表示上传数据打包成功，否则为错误码
-                            String result = event.data.getString("result");
-
-                            LogUtils.dTag(SpeechTAG, result);
-                        }
-                    }
-                } break;
-
-                default:
-                    break;
-            }
+            case AIUIConstant.EVENT_CMD_RETURN: {
+                LogUtils.dTag(SpeechTAG, "STATE_IDLE EVENT_CMD_RETURN");
+            } break;
+            default:
+                break;
         }
     };
 
@@ -1234,43 +1228,15 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
         }
     }
 
-    private void startVoiceNlp() {
+    private void startWakeUp() {
         if (null == mAIUIAgent) {
             LogUtils.eTag(SpeechTAG, "AIUIAgent为空，请先创建");
             return;
         }
-
-        LogUtils.iTag(SpeechTAG, "start voice nlp" );
-        // TODO: 2021/12/22  语音文字控件内容显示空
-
-        // 先发送唤醒消息，改变AIUI内部状态，只有唤醒状态才能接收语音输入
-        // 默认为oneshot模式，即一次唤醒后就进入休眠。可以修改aiui_phone.cfg中speech参数的interact_mode为continuous以支持持续交互
-        if (!mIsWakeupEnable) {
-            AIUIMessage wakeupMsg = new AIUIMessage(AIUIConstant.CMD_WAKEUP, 0, 0, "", null);
-            mAIUIAgent.sendMessage(wakeupMsg);
-        }
-
-        // 打开AIUI内部录音机，开始录音。若要使用上传的个性化资源增强识别效果，则在参数中添加pers_param设置
-        // 个性化资源使用方法可参见http://doc.xfyun.cn/aiui_mobile/的用户个性化章节
-        // 在输入参数中设置tag，则对应结果中也将携带该tag，可用于关联输入输出
-        String params = "sample_rate=16000,data_type=audio,pers_param={\"uid\":\"\"},tag=audio-tag";
-        AIUIMessage startRecord = new AIUIMessage(AIUIConstant.CMD_START_RECORD, 0, 0, params, null);
-
-        mAIUIAgent.sendMessage(startRecord);
-    }
-
-    private void stopVoiceNlp() {
-        if (null == mAIUIAgent) {
-            LogUtils.dTag(SpeechTAG, "AIUIAgent 为空，请先创建");
-            return;
-        }
-
-        LogUtils.iTag(SpeechTAG, "stop voice nlp" );
-        // 停止录音
-        String params = "sample_rate=16000,data_type=audio";
-        AIUIMessage stopRecord = new AIUIMessage(AIUIConstant.CMD_STOP_RECORD, 0, 0, params, null);
-
-        mAIUIAgent.sendMessage(stopRecord);
+        // 可以通过小飞小飞唤醒词来唤醒语音
+        // 开始录音
+        AIUIMessage msg = new AIUIMessage(AIUIConstant.CMD_START_RECORD, 0 ,0, "data_type=audio,sample_rate=16000", null);
+        mAIUIAgent.sendMessage(msg);
     }
 
     private String getAIUIParams() {
@@ -1302,7 +1268,152 @@ public class MainActivity extends Activity implements MessageDialogFragment.Mess
     }
 
     private void destroySpeech() {
+        if (null != mAIUIAgent) {
+            LogUtils.dTag(SpeechTAG, "销毁 aiui agent");
+            mAIUIAgent.destroy();
+            mAIUIAgent = null;
+        }
+    }
 
+    final private OnCaeOperatorListener onCaeOperatorListener = new OnCaeOperatorListener() {
+        @Override
+        public void onAudio(byte[] audioData, int dataLen) {
+            if (isAsring && mAIUIState == AIUIConstant.STATE_WORKING) {
+                String params = "data_type=audio,sample_rate=16000";
+                AIUIMessage msg = new AIUIMessage(AIUIConstant.CMD_WRITE, 0, 0, params, audioData);
+                mAIUIAgent.sendMessage(msg);
+            } else {
+                LogUtils.eTag(SpeechTAG,"未送入音频： mAIUIState ="+mAIUIState+"  isAsring： "+isAsring);
+            }
+        }
+
+        @Override
+        public void onWakeup(int angle, int beam) {
+            LogUtils.eTag(SpeechTAG, "onWakeup: " + angle + "   " + beam);
+            AIUIMessage resetWakeupMsg = new AIUIMessage(
+                    AIUIConstant.CMD_WAKEUP, angle, beam, "", null
+            );
+            mAngle = angle;
+            mBeam = beam;
+            mAIUIAgent.sendMessage(resetWakeupMsg);
+            onWakeupHandler(angle, beam);
+        }
+
+        @Override
+        public void onError(int errorCode, String msg) {
+
+        }
+    };
+
+    private void initCaeEngine() {
+        if (null == caeOperator) {
+            caeOperator = CaeOperator.getInstance();
+        } else {
+            LogUtils.dTag(SpeechTAG, "initCaeEngine is Init Done!");
+        }
+        caeOperator.setCaeOperatorListener(onCaeOperatorListener);
+    }
+
+    protected void playTts(String text) {
+        byte[] ttsData = text.getBytes(); //转为二进制数据
+        StringBuffer params = new StringBuffer(); //构建合成参数
+        params.append("vcn=x2_xiaojuan");//合成发音人
+        params.append(",speed=50");//合成速度
+        params.append(",pitch=50");//合成音调
+        params.append(",volume=50");//合成音量
+
+        Executors.newCachedThreadPool().execute(() -> {
+            AIUIMessage startTts =
+                    new AIUIMessage(AIUIConstant.CMD_TTS, AIUIConstant.START, 0, params.toString(), ttsData);
+            if (mAIUIAgent != null) {
+                mAIUIAgent.sendMessage(startTts);
+            }
+        });
+    }
+
+    private void updateChatShow(ItemChatType type, String content) {
+        // TODO: 2021/12/22  更新UI对话数据
+//        EventBus.getDefault().post(new ChatBean(type,content));
+        LogUtils.dTag(SpeechTAG,"type = " + type + " content: " + content);
+
+//        if (!TextUtils.isEmpty(content)) {
+//            Log.d("zdx", "updateChatShow: " + content);
+//            if(TextUtils.equals(content,"播放收音机") || TextUtils.equals(content,"播放电台")
+//                    || TextUtils.equals(content,"播放FM")){
+//                if(listBeans.size() > 0) {
+//                    String uri = listBeans.get(index).getUrl();
+//                    if (uri != null) {
+//                        Uri uri1 = Uri.parse(uri);
+//                        try {
+//                            mediaPlayer.reset();
+//                            mediaPlayer.setDataSource(VoiceService.this, uri1);
+//                            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//                            mediaPlayer.prepare();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        mediaPlayer.start();
+//                    }
+//                }
+//            }else if(TextUtils.equals(content,"切换下一个频道") || TextUtils.equals(content,"下一个频道")){
+//                if(listBeans.size() > 0 && index <= listBeans.size()) {
+//                    index = index + 1;
+//                    String uri = listBeans.get(index).getUrl();
+//                    if (uri != null) {
+//                        Uri uri1 = Uri.parse(uri);
+//                        try {
+//                            if(mediaPlayer.isPlaying()){
+//                                mediaPlayer.reset();
+//                            }
+//                            mediaPlayer.setDataSource(VoiceService.this, uri1);
+//                            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//                            mediaPlayer.prepare();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        mediaPlayer.start();
+//                    }
+//                }
+//            }else if(TextUtils.equals(content,"切换上一个频道") || TextUtils.equals(content,"上一个频道")){
+//                if(listBeans.size() > 0 && index > 0) {
+//                    index = index - 1;
+//                    String uri = listBeans.get(index).getUrl();
+//                    if (uri != null) {
+//                        Uri uri1 = Uri.parse(uri);
+//                        try {
+//                            if(mediaPlayer.isPlaying()){
+//                                mediaPlayer.reset();
+//                            }
+//                            mediaPlayer.setDataSource(VoiceService.this, uri1);
+//                            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//                            mediaPlayer.prepare();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        mediaPlayer.start();
+//                    }
+//                }
+//            }else if(TextUtils.equals(content,"关闭收音机") || TextUtils.equals(content,"关闭电台")
+//                    || TextUtils.equals(content,"关闭FM")){
+//                if(mediaPlayer != null && mediaPlayer.isPlaying()){
+//                    mediaPlayer.stop();
+//                }
+//            }
+//        }
+    }
+
+    private void stopTTS() {
+        AIUIMessage resetWakeupMsg = new AIUIMessage(
+                AIUIConstant.CMD_TTS, AIUIConstant.CANCEL, 0, "", null
+        );
+        if (mAIUIAgent != null) {
+            mAIUIAgent.sendMessage(resetWakeupMsg);
+        }
+    }
+
+    protected void onWakeupHandler(int angle, int beam) {
+        stopTTS();
+        AiuiServiceManager.getInstance().handlerWake();
     }
 
 
