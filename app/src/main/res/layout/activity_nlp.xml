@@ -47,22 +47,24 @@
                 android:layout_above="@+id/ll"/>
 
         <LinearLayout
-                android:id="@+id/ll"
+            android:id="@+id/ll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/bottom_bg"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:background="@drawable/bottom_bg"
-                android:orientation="horizontal"
-                android:layout_alignParentBottom="true">
+                android:src="@drawable/fm" />
 
-            <ImageView android:layout_width="wrap_content"
-                       android:layout_height="wrap_content"
-                        android:src="@drawable/fm"/>
-
-            <ImageView android:layout_width="wrap_content"
-                       android:layout_height="wrap_content"
-                       android:layout_marginLeft="40dp"
-                       android:src="@drawable/cd"/>
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="40dp"
+                android:src="@drawable/cd" />
 
         </LinearLayout>
 
