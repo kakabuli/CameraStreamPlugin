@@ -35,6 +35,7 @@
         android:layout_width="match_parent"
         android:layout_height="96dp"
         android:background="@color/black"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -44,12 +45,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:visibility="gone"
         app:layout_constraintGuide_percent="0.5" />
 
     <com.serenegiant.UVCCameraView
         android:id="@+id/uvcCameraView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:visibility="gone"
         android:layout_centerInParent="true"
         app:layout_constraintBottom_toTopOf="@+id/tvBottomBg"
         app:layout_constraintEnd_toStartOf="@+id/guideline2"
@@ -60,6 +63,7 @@
         android:id="@+id/uvcCameraView1"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:visibility="gone"
         android:layout_centerInParent="true"
         app:layout_constraintBottom_toTopOf="@+id/tvBottomBg"
         app:layout_constraintEnd_toEndOf="parent"
@@ -75,6 +79,7 @@
             android:text="视频加载中..."
             android:textColor="#ffffff"
             android:textSize="16sp"
+            android:visibility="gone"
             app:layout_constraintBottom_toTopOf="@+id/tvBottomBg"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -109,8 +114,36 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/guideline2"
         app:layout_constraintTop_toTopOf="@+id/tvBottomBg"
-        app:layout_constraintVertical_bias="0.519"
+        app:layout_constraintVertical_bias="0.619"
         android:background="@drawable/cd"
         app:srcCompat="@drawable/cd" />
+
+        <LinearLayout
+            android:id="@+id/ll_voice"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:layout_marginTop="20dp"
+                android:layout_gravity="center"
+                android:textSize="24sp"
+                android:layout_centerHorizontal="true"
+                android:text="智能收音机"/>
+
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/chatRecycleView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="30dp"
+                android:overScrollMode="never"/>
+
+        </LinearLayout>
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
